@@ -26,7 +26,7 @@ def mission03():
     my_drone = Tello()
     drone = HeadsUpTello(my_drone, logging.WARNING, floor=100, ceiling=180)
     print(drone.drone.get_height())
-    drone.take_off()
+    drone.takeoff()
     time.sleep(1)
     drone.fly_to_mission_ceiling()
     time.sleep(2)

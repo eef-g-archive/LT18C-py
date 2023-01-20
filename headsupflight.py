@@ -2,6 +2,7 @@
 
 import dji_matrix as djim
 import logging
+import time
 
 
 #------------------------- BEGIN HeadsUpTello CLASS ----------------------------
@@ -12,7 +13,7 @@ class HeadsUpTello():
     Drone. Inherits from the djitellopy.Tello class.
     """
 
-    def __init__(self, drone_baseobject, debug_level=logging.INFO, floor=-1, ceiling=-1):
+    def __init__(self, drone_baseobject, debug_level=logging.INFO, floor=0, ceiling=0):
         """
         Constuctor that establishes a connection with the drone. Pass in a new
         djitellopy Tello object give your HeadsUpTello object its wings.
@@ -35,7 +36,7 @@ class HeadsUpTello():
         self.ceiling = ceiling
 
         try:
-            self.drone.connect()
+            #self.drone.connect()
             self.drone.connect()
             self.connected = True
         except Exception as excp:
@@ -133,21 +134,51 @@ class HeadsUpTello():
         """ Returns the drone's internal temperature in °F. """
         return self.drone.get_temperature()
 
+
+
     def takeoff(self):
+
         self.drone.takeoff()
-    
+
     def land(self):
+
         self.drone.land()
 
+
+    # def fly_to_mission_floor(self):
+
+
     def fly_to_mission_ceiling(self):
-        curr_height = self.drone.get_height()
-        self.drone.move_up(self.ceiling - curr_height - 20)
-        pass
+        h = self.drone.get_height()
+        while(h < self.ceiling):
+            if h + 20 < self.ceiling:
+                self.drone.move_up(20)
+                print("Trying to move up by 20 units")
+            else:
+                print("I cannot move up anymore!")
+                break
+            h = self.drone.get_height()
+            print(f"My current height is: '{h}'")
+            if h == self.ceiling:
+                break
+        print("Ceiling reached | Hovering for 10 seconds to test measurement")
+        time.sleep(10)
 
     def fly_to_mission_floor(self):
-        curr_height = self.drone.get_height()
-        self.drone.move_down(curr_height - self.floor)
-        pass
+        h = self.drone.get_height()
+        while (h > self.floor):
+            if h + 20 > self.floor:
+                self.drone.move_down(20)
+                print("Trying to move down 20 units")
+            else:
+                print("I have reached the floor already, I can't go lower! D:")
+                break
+            h = self.drone.get_height()
+            print(f"My current height is: '{h}'")
+            if h == self.floor:
+                break
+        print("Floor reached | Hovering for 10 seconds to test measurement")
+        time.sleep(10)
 
 
 
