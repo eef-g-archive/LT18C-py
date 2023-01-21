@@ -39,6 +39,7 @@ class HeadsUpTello():
             #self.drone.connect()
             self.drone.connect()
             self.connected = True
+            self.start_barometer = self.drone.get_barometer()
         except Exception as excp:
             print(f"ERROR: could not connect to Trello Drone: {excp}")
             print(f" => Did you pass in a valid drone base object?")
@@ -145,7 +146,6 @@ class HeadsUpTello():
         self.drone.land()
 
 
-    # def fly_to_mission_floor(self):
 
 
     def fly_to_mission_ceiling(self):
@@ -179,6 +179,78 @@ class HeadsUpTello():
                 break
         print("Floor reached | Hovering for 10 seconds to test measurement")
         time.sleep(10)
+
+    def up(self, cm):
+        print(f"=-"*15)
+        currHeight = self.drone.get_barometer() - self.start_barometer
+        print(f"Current height: {currHeight}")
+        # First, see if we can adjust the cm value to fit within the ceiling
+        if(currHeight + cm > self.ceiling):
+            cm = self.ceiling - currHeight
+            print(f"New cm: {cm}")
+
+        # If cm is now 0, then just return
+        if(cm == 0):
+            print("Drone cannot go any higher!")
+            return
+        
+        if(cm < 20 and currHeight - 20 >= self.floor and (currHeight + 20) > self.ceiling):
+            print(f"Entered if statement #1")
+            self.drone.move_down(20)
+            print(f"Height after lowering temporarily: {self.drone.get_barometer() - self.start_barometer}")
+            self.drone.move_up(cm + 20)
+
+        elif(cm >= 20 and currHeight + cm <= self.ceiling):
+            print(f"Entered if statement #2")
+            self.drone.move_up(cm)            
+
+        elif(cm < 20 and currHeight - 20 <= self.ceiling):
+            print(f"Entered if statement 3")
+            self.drone.move_up(20)
+            print(f"Current height after raising temporarily: {self.drone.get_barometer() - self.start_barometer}")
+            self.drone.move_down(20 + cm)
+        
+        elif (cm > 20 and currHeight + cm >= self.ceiling):
+            print(f"Entered if statement 4")
+            self.drone.move_up(self.ceiling - currHeight)
+
+        else:
+            print(f"ERROR: No possible way to make that move")
+
+
+        print(f"Height after final safe ascent: {self.drone.get_barometer() - self.start_barometer}")
+    def down(self, cm):
+        currHeight = self.drone.get_barometer() - self.start_barometer
+
+        print(f"=-" * 15)
+        print(f"Current height: {currHeight}")
+        print(f"Beginning to move down")
+        # For the actual up(cm) function, the currHeight will not exist but will be a variable in the drone object
+        # --- Same goes for ceiling ---
+
+        # First, see if we can adjust the cm value to fit within the ceiling
+        if(currHeight - cm < self.floor):
+            cm = currHeight - self.floor
+            print(f"New target height: {cm}")
+        
+
+        if (cm == 0):
+            print(f"Drone already at the floor!")
+            return 
+
+        # Need this line bc the default functions will not do anything less than 20 for whatever reason
+        if(cm < 20 and currHeight - 20 <= self.ceiling and (currHeight + 20) > self.floor):
+            self.drone.move_up(20)
+            print(f"Height after raising temporarily: {self.drone.get_barometer() - self.start_barometer}")
+            self.drone.move_down(cm + 20)
+            print(f"Height after final adjustment: {self.drone.get_barometer() - self.start_barometer}")
+
+        elif (cm >= 20 and currHeight - cm > self.floor):
+            self.drone.move_down(cm)
+            print(f"Current height after final safe descent: {self.drone.get_barometer() - self.start_barometer}")
+        
+    
+        
 
 
 
