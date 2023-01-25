@@ -92,6 +92,7 @@ class HeadsUpTello():
         try:
             self.drone.connect()
             self.connected = True
+            self.log.info("Drone connected successfully")
             self.start_barometer = self.drone.get_barometer()
         except Exception as excp:
             print(f"ERROR: could not connect to Trello Drone: {excp}")
@@ -100,6 +101,7 @@ class HeadsUpTello():
             print(f"    The Chromebook's firewall reverts to default settings every")
             print(f"    time that you restart the virtual Linux environment.")
             print(f" => You may need to connect to the drone with the Trello App.")
+            self.log.warning("Could not connect to drone")
             self.disconnect()
             raise
         return
@@ -116,6 +118,7 @@ class HeadsUpTello():
         """ Gracefully close the connection with the drone. """
         self.drone.end()
         self.connected = False
+        self.log.info("Drone disconnected")
         print(f"Drone connection closed gracefully")
         return
 
@@ -176,16 +179,19 @@ class HeadsUpTello():
 
     def get_battery(self):
         """ Returns the drone's battery level as a percent. """
+        self.log.debug(f"get_battery function called -- Output: {self.drone.get_battery()}")
         return self.drone.get_battery()
 
 
     def get_barometer(self):
         """ Returns the drone's current barometer reading in cm. """
+        self.log.debug(f"get_barometer function called -- Output: {self.drone.get_barometer()}")
         return self.drone.get_barometer()
 
 
     def get_temperature(self):
         """ Returns the drone's internal temperature in °F. """
+        self.log.debug(f"get_temperature function called -- Output: {self.drone.get_termerature()}")
         return self.drone.get_temperature()
 
 
@@ -204,6 +210,7 @@ class HeadsUpTello():
 
 
     def fly_to_mission_ceiling(self):
+        self.log.debug(f"fly_to_mission_ceiling function called -- Going to {self.ceiling} cm")
         h = self.drone.get_height()
         while(h < self.ceiling):
             if h + 20 < self.ceiling:
@@ -217,9 +224,11 @@ class HeadsUpTello():
             if h == self.ceiling:
                 break
         print("Ceiling reached | Hovering for 10 seconds to test measurement")
+        self.log.info(f"Mission ceiling reached. Drone height: {self.drone.get_height()} cm")
         time.sleep(10)
 
     def fly_to_mission_floor(self):
+        self.log.debug(f"fly_to_mission_floor function called -- Going to {self.floor} cm")
         h = self.drone.get_height()
         while (h > self.floor):
             if h + 20 > self.floor:
@@ -233,30 +242,35 @@ class HeadsUpTello():
             if h == self.floor:
                 break
         print("Floor reached | Hovering for 10 seconds to test measurement")
+        self.log.info(f"Mission floor reached. Drone height: {self.drone.get_height()} cm")
         time.sleep(10)
 
-    def up(self, cm): 
+
+    def up(self, cm):
+        self.log.debug(f"up function called -- cm: {cm}") 
         currHeight = self.drone.get_barometer() - self.start_barometer
         
-        print(f"Beginning to move up")
         # First, see if we can adjust the cm value to fit within the ceiling
         if(currHeight + cm > self.ceiling):
             cm = self.ceiling - currHeight
-            print(f"New cm: {cm}")
+            self.log.debug(f"Given cm + currHeight > {self.ceiling} | cm value updated to {cm} cm")
 
         # If cm is now 0, then just return
         if(cm == 0):
-            print("Drone cannot go any higher!")
+            self.log.debug("Ending up function, drone cannot go any higher")
             return
- 
-        self.drone.move_up(cm); 
-
-        print(f"Height after final safe ascent: {self.drone.get_barometer() - self.start_barometer}")
+        elif (cm < 20):
+            self.log.debug("Value given to move up less than 20. Returning.")
+            return
+        else:
+            self.log.debug(f"Drone moving up {cm}cm to {cm + currHeight}cm")
+            self.drone.move_up(cm) 
+            self.log.info(f"Drone moved up successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
     
     def down(self, cm):
+        self.log.debug(f"up function called -- cm: {cm}") 
         currHeight = self.drone.get_barometer() - self.start_barometer
  
-        print(f"Beginning to move down")
         # For the actual up(cm) function, the currHeight will not exist but will be a variable in the drone object
         # --- Same goes for ceiling ---
 
@@ -265,12 +279,17 @@ class HeadsUpTello():
             cm = currHeight - self.floor
             print(f"New target height: {cm}")
         
-
-        if (cm == 0):
-            print(f"Drone already at the floor!")
-            return 
-
-        self.drone.move_down(cm); 
+        if(cm == 0):
+            self.log.debug("Ending up function, drone cannot go any higher")
+            return
+        elif (cm < 20):
+            self.log.debug("Value given to move up less than 20. Returning.")
+            return
+        else:
+            self.log.debug(f"Drone moving down {cm}cm to {cm + currHeight}cm")
+            self.drone.move_down(cm) 
+            self.log.info(f"Drone moved down successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
+    
 
     
         
