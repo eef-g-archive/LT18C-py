@@ -28,11 +28,6 @@ def mission06():
     drone.takeoff()
 
     userInput = 'h'; 
-
-    #go_xyz_speed
-    x = 0; 
-    y = 0; 
-
     distance_to_travel = 20; 
 
     go_straight = False; 
@@ -41,27 +36,18 @@ def mission06():
         print("~" * 15)
         try:
             if 'f' in userInput:
-                drone.drone.move_forward(distance_to_travel); 
-                x += distance_to_travel; 
+                drone.forward_cm(distance_to_travel)
             elif 'b' in userInput:
-                drone.drone.move_back(distance_to_travel); 
-                x -= distance_to_travel; 
+                drone.backward_cm(distance_to_travel)
             elif 'r' in userInput:
-                drone.drone.move_right(distance_to_travel); 
-                y += distance_to_travel; 
+                drone.right_cm(distance_to_travel)
             elif 'l' in userInput:
-                drone.drone.move_left(distance_to_travel); 
-                y -= distance_to_travel; 
-            
+                drone.left_cm(distance_to_travel)
             elif 'home' in userInput: 
                 if go_straight:
-                    drone.drone.go_xyz_speed(-x, y, 0, 10); 
+                    drone.return_home(go_straight)
                 else:
-                    drone.drone.go_xyz_speed(-x, 0, 0, 100); 
-                    drone.drone.go_xyz_speed(0, y, 0, 100);   
-                x = 0; 
-                y = 0; 
-        
+                    drone.return_home()
             userInput = input(); 
 
         except:

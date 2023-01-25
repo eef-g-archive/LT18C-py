@@ -40,6 +40,9 @@ class HeadsUpTello():
         self.floor = floor
         self.ceiling = ceiling
 
+        self.x = 0
+        self.y = 0
+
         now = datetime.now().strftime("%Y%m%d.%H")
         logfile = f"{self.drone_name}.{now}.log"
         logname = self.drone_name
@@ -246,7 +249,7 @@ class HeadsUpTello():
         time.sleep(10)
 
 
-    def up(self, cm):
+    def up_cm(self, cm):
         self.log.debug(f"up function called -- cm: {cm}") 
         currHeight = self.drone.get_barometer() - self.start_barometer
         
@@ -267,7 +270,7 @@ class HeadsUpTello():
             self.drone.move_up(cm) 
             self.log.info(f"Drone moved up successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
     
-    def down(self, cm):
+    def down_cm(self, cm):
         self.log.debug(f"up function called -- cm: {cm}") 
         currHeight = self.drone.get_barometer() - self.start_barometer
  
@@ -290,10 +293,44 @@ class HeadsUpTello():
             self.drone.move_down(cm) 
             self.log.info(f"Drone moved down successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
     
-
+    def forward_cm(self, cm):
+        self.log.debug(f"forward_cm function called | cm: {cm}")
+        self.log.info(f"Drone position prior to moving: [{self.x}, {self.y}]")
+        self.drone.move_forward(cm)
+        self.x += cm
+        self.log.info(f"Drone moved forward successfully. Current postion: [{self.x}, {self.y}]")
     
-        
+    def backward_cm(self, cm):
+        self.log.debug(f"backward_cm function called | cm: {cm}")
+        self.log.info(f"Drone position prior to moving backwards: [{self.x}, {self.y}]")
+        self.drone.move_back(cm)
+        self.x -= cm
+        self.log.info(f"Drone move backwards  successfully. Current position: [{self.x}, {self.y}]")
 
+    def right_cm(self, cm):
+        self.log.debug(f"right_cm function called | cm: {cm}")
+        self.log.info(f"Drone position prior to moving right: [{self.x}, {self.y}]")
+        self.drone.move_right(cm)
+        self.y += cm
+        self.log.info(f"Drone moved right successfully. Current position: [{self.x}, {self.y}]")
 
+    def left_cm(self, cm):
+        self.log.debug(f"left_cm function called. | cm: {cm}")
+        self.log.info(f"Drone position prior to moving left: [{self.x}, {self.y}]")
+        self.drone.move_left(cm)
+        self.y -= cm
+        self.log.info(f"Drone moved left successfully. Current position: [{self.x}, {self.y}]")
+
+    def return_home(self, direct=False):
+        self.log.debug(f"return_home function called. | direct = {direct}")
+        self.log.info(f"Drone position prior to returning home : [{self.x}, {self.y}]")
+        if direct:
+            self.drone.go_xyz_speed(-self.x, self.y, 0, 10)
+        else:
+            self.drone.go_xyz_speed(-self.x, 0, 0, 100)
+            self.drone.go_xyz_speed(0, self.y, 0, 100)
+        self.x = 0
+        self.y = 0
+        self.log.info(f"Drone returned home successfully. Current position: [{self.x}, {self.y}]")
 
 #------------------------- END OF HeadsUpTello CLASS ---------------------------
