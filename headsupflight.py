@@ -13,7 +13,9 @@ class HeadsUpTello():
     Drone. Inherits from the djitellopy.Tello class.
     """
 
-    def __init__(self, drone_baseobject, debug_level=logging.INFO, floor=0, ceiling=0):
+    def __init__(self, drone_baseobject, debug_level=logging.INFO,
+                 floor=0, ceiling=0, drone_name="DroneyMcDroneFace",
+                mission_name="Maiden Voyage"):
         """
         Constuctor that establishes a connection with the drone. Pass in a new
         djitellopy Tello object give your HeadsUpTello object its wings.
