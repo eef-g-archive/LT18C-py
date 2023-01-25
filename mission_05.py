@@ -23,8 +23,8 @@ from headsupflight import HeadsUpTello
 
 def mission04():
     my_drone = Tello()
-    mission_params = [30, 180]
-    drone = HeadsUpTello(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1])
+    mission_params = [30, 180, "PT Student", "Mission 5"]
+    drone = HeadsUpTello(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     drone.takeoff()
 
     userInput = 'h'

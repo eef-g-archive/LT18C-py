@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import dji_matrix as djim
-import logging
+import logging, logging.config
 import time
+from datetime import datetime
 
 
 #------------------------- BEGIN HeadsUpTello CLASS ----------------------------
@@ -32,13 +33,63 @@ class HeadsUpTello():
         # instead of inheritance (is-a) so that we can choose between the real
         # drone and a simulator. If we had used inheritance, we would be forced
         # to choose one or the other.
+        self.drone_name = drone_name
+        self.mission_name = mission_name
         self.drone = drone_baseobject
         self.drone.LOGGER.setLevel(debug_level)
         self.floor = floor
         self.ceiling = ceiling
 
+        now = datetime.now().strftime("%Y%m%d.%H")
+        logfile = f"{self.drone_name}.{now}.log"
+        logname = self.drone_name
+        # Thanks to Yogesh Yadav's example with Stream Handler and File Handler:
+        #   https://stackoverflow.com/questions/7507825 (not the winning answer)
+        # Configure the logger so that DEBUG messages and higher are logged to file but
+        #   only WARNINGS and higher are printed to stderr
+
+        log_settings = {
+            'version':1,
+            'disable_existing_loggers': False,
+            'handlers': {
+                'error_file_handler': {
+                    'level': 'DEBUG',
+                    'formatter': 'drone_errfile_fmt',
+                    'class': 'logging.FileHandler',
+                    'filename': logfile,
+                    'mode': 'a',
+                },
+                'debug_console_handler': {
+                    'level': 'WARNING',
+                    'formatter': 'drone_stderr_fmt',
+                    'class': 'logging.StreamHandler',
+                    'stream': 'ext://sys.stderr',
+                },    
+            },    
+            'formatters': {
+                'drone_errfile_fmt': {
+                    'format': '%(asctime)s|%(levelname)s: %(message)s [%(name)s@%(filename)s.%(funcName)s.%(lineno)d]',
+                    'datefmt': '%Y-%m-%dT%H:%M:%S'
+                },
+                'drone_stderr_fmt': {
+                    'format': '%(levelname)s: %(message)s [%(name)s@%(filename)s.%(funcName)s.%(lineno)d]',
+                },
+            },
+            'loggers': {
+                logname: {
+                    'handlers' :['debug_console_handler', 'error_file_handler'],
+                    'level': 'DEBUG',
+                    'propagate': False,
+                },
+            },
+        }
+        logging.config.dictConfig(log_settings)
+
+        self.log = logging.getLogger(logname)
+        self.log.info("Logger initialized")
+
+
         try:
-            #self.drone.connect()
             self.drone.connect()
             self.connected = True
             self.start_barometer = self.drone.get_barometer()
@@ -140,11 +191,13 @@ class HeadsUpTello():
 
 
     def takeoff(self):
-
+        self.log.info("*** TAKEOFF ***")
         self.drone.takeoff()
+        self.log.info(f"Drone height at takeoff: {self.drone.get_height()} cm")
+
 
     def land(self):
-
+        self.log.info("*** LANDING ***")
         self.drone.land()
 
 
