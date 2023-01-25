@@ -37,7 +37,7 @@ def mission04():
             userInput = int(userInput)
             if(userInput > 0):
                 drone.up(userInput)
-            else:
+            elif(userInput < 0):
                 userInput *= -1
                 drone.down(userInput)
         except:
