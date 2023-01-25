@@ -6,6 +6,11 @@
 #      LOGS     #
 #################
 
+# Video Link: https://flip.com/groups/14186500/topics/34494288/responses/409752384
+# Findings:
+#   Barometer is slightly more accurate
+#   Height would be off, but would be off by larger amounts
+#   Barometer, however, is entirely dependent on how you do your math & keeping track from the very beginning
 
 
 # Standard python modules
