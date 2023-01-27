@@ -70,8 +70,7 @@ def run_mission():
         print(f"Mission completed")
     except Exception as excp:
         print(excp)
-        print(f"Mission aborted")
-
+        print(f"Mission aborted") 
 
 if __name__ == '__main__':
     run_mission()
