@@ -327,8 +327,15 @@ class HeadsUpTello():
         if direct:
             self.drone.go_xyz_speed(-self.x, self.y, 0, 10)
         else:
-            self.drone.go_xyz_speed(-self.x, 0, 0, 100)
-            self.drone.go_xyz_speed(0, self.y, 0, 100)
+            if (self.x < 0):
+                self.forward_cm(-self.x)
+            else:
+                self.backward_cm(self.x)
+            
+            if (self.y < 0):
+                self.right_cm(-self.y)
+            else:
+                self.left_cm(self.y)
         self.x = 0
         self.y = 0
         self.log.info(f"Drone returned home successfully. Current position: [{self.x}, {self.y}]")
