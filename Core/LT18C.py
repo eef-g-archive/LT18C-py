@@ -43,6 +43,10 @@ class HeadsUpTello():
         self.x = 0
         self.y = 0
 
+        self.MIN_TAKEOFF_POWER = 15
+        self.MIN_OPERATING_POWER = 10
+
+
         now = datetime.now().strftime("%Y%m%d.%H")
         logfile = f"{self.drone_name}.{now}.log"
         logname = self.drone_name
@@ -200,9 +204,13 @@ class HeadsUpTello():
 
 
     def takeoff(self):
-        self.log.info("*** TAKEOFF ***")
-        self.drone.takeoff()
-        self.log.info(f"Drone height at takeoff: {self.drone.get_height()} cm")
+        if (self.drone.get_battery() > self.MIN_TAKEOFF_POWER):
+            self.log.info("*** TAKEOFF ***")
+            self.drone.takeoff()
+            self.log.info(f"Drone height at takeoff: {self.drone.get_height()} cm")
+        else:
+            self.log.warning("*** TAKEOFF FAILED ***")
+            self.log.warning("Drone battery less than 15%, aborting takeoff")
 
 
     def land(self):
@@ -214,130 +222,171 @@ class HeadsUpTello():
 
     def fly_to_mission_ceiling(self):
         self.log.debug(f"fly_to_mission_ceiling function called -- Going to {self.ceiling} cm")
-        h = self.drone.get_height()
-        while(h < self.ceiling):
-            if h + 20 < self.ceiling:
-                self.drone.move_up(20)
-                print("Trying to move up by 20 units")
-            else:
-                print("I cannot move up anymore!")
-                break
+        if(self.drone.get_battery() > self.MIN_OPERATING_POWER):
             h = self.drone.get_height()
-            print(f"My current height is: '{h}'")
-            if h == self.ceiling:
-                break
-        print("Ceiling reached | Hovering for 10 seconds to test measurement")
-        self.log.info(f"Mission ceiling reached. Drone height: {self.drone.get_height()} cm")
-        time.sleep(10)
+            while(h < self.ceiling):
+                if h + 20 < self.ceiling:
+                    self.drone.move_up(20)
+                    print("Trying to move up by 20 units")
+                else:
+                    print("I cannot move up anymore!")
+                    break
+                h = self.drone.get_height()
+                print(f"My current height is: '{h}'")
+                if h == self.ceiling:
+                    break
+            print("Ceiling reached | Hovering for 10 seconds to test measurement")
+            self.log.info(f"Mission ceiling reached. Drone height: {self.drone.get_height()} cm")
+            time.sleep(10)
+        else:
+            self.log.warning("ERROR: Drone battery less than 10%, aborting command and landing")
+            self.land()
 
     def fly_to_mission_floor(self):
         self.log.debug(f"fly_to_mission_floor function called -- Going to {self.floor} cm")
-        h = self.drone.get_height()
-        while (h > self.floor):
-            if h + 20 > self.floor:
-                self.drone.move_down(20)
-                print("Trying to move down 20 units")
-            else:
-                print("I have reached the floor already, I can't go lower! D:")
-                break
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
             h = self.drone.get_height()
-            print(f"My current height is: '{h}'")
-            if h == self.floor:
-                break
-        print("Floor reached | Hovering for 10 seconds to test measurement")
-        self.log.info(f"Mission floor reached. Drone height: {self.drone.get_height()} cm")
-        time.sleep(10)
+            while (h > self.floor):
+                if h + 20 > self.floor:
+                    self.drone.move_down(20)
+                    print("Trying to move down 20 units")
+                else:
+                    print("I have reached the floor already, I can't go lower! D:")
+                    break
+                h = self.drone.get_height()
+                print(f"My current height is: '{h}'")
+                if h == self.floor:
+                    break
+            print("Floor reached | Hovering for 10 seconds to test measurement")
+            self.log.info(f"Mission floor reached. Drone height: {self.drone.get_height()} cm")
+            time.sleep(10)
+        else:
+            self.log.warning("ERROR: Drone battery less than 10%, aborting command and landing")
+            self.land()
+        
 
 
     def up_cm(self, cm):
         self.log.debug(f"up function called -- cm: {cm}") 
-        currHeight = self.drone.get_barometer() - self.start_barometer
-        
-        # First, see if we can adjust the cm value to fit within the ceiling
-        if(currHeight + cm > self.ceiling):
-            cm = self.ceiling - currHeight
-            self.log.debug(f"Given cm + currHeight > {self.ceiling} | cm value updated to {cm} cm")
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            currHeight = self.drone.get_barometer() - self.start_barometer
+            
+            # First, see if we can adjust the cm value to fit within the ceiling
+            if(currHeight + cm > self.ceiling):
+                cm = self.ceiling - currHeight
+                self.log.debug(f"Given cm + currHeight > {self.ceiling} | cm value updated to {cm} cm")
 
-        # If cm is now 0, then just return
-        if(cm == 0):
-            self.log.debug("Ending up function, drone cannot go any higher")
-            return
-        elif (cm < 20):
-            self.log.debug("Value given to move up less than 20. Returning.")
-            return
+            # If cm is now 0, then just return
+            if(cm == 0):
+                self.log.debug("Ending up function, drone cannot go any higher")
+                return
+            elif (cm < 20):
+                self.log.debug("Value given to move up less than 20. Returning.")
+                return
+            else:
+                self.log.debug(f"Drone moving up {cm}cm to {cm + currHeight}cm")
+                self.drone.move_up(cm) 
+                self.log.info(f"Drone moved up successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
         else:
-            self.log.debug(f"Drone moving up {cm}cm to {cm + currHeight}cm")
-            self.drone.move_up(cm) 
-            self.log.info(f"Drone moved up successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
+            self.log.warning("ERROR! Aborting command, drone battery less than 10%. Making emergency landing")
+            self.land()
     
     def down_cm(self, cm):
         self.log.debug(f"up function called -- cm: {cm}") 
-        currHeight = self.drone.get_barometer() - self.start_barometer
- 
-        # For the actual up(cm) function, the currHeight will not exist but will be a variable in the drone object
-        # --- Same goes for ceiling ---
-
-        # First, see if we can adjust the cm value to fit within the ceiling
-        if(currHeight - cm < self.floor):
-            cm = currHeight - self.floor
-            print(f"New target height: {cm}")
-        
-        if(cm == 0):
-            self.log.debug("Ending up function, drone cannot go any higher")
-            return
-        elif (cm < 20):
-            self.log.debug("Value given to move up less than 20. Returning.")
-            return
-        else:
-            self.log.debug(f"Drone moving down {cm}cm to {cm + currHeight}cm")
-            self.drone.move_down(cm) 
-            self.log.info(f"Drone moved down successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            currHeight = self.drone.get_barometer() - self.start_barometer
     
+            # For the actual up(cm) function, the currHeight will not exist but will be a variable in the drone object
+            # --- Same goes for ceiling ---
+
+            # First, see if we can adjust the cm value to fit within the ceiling
+            if(currHeight - cm < self.floor):
+                cm = currHeight - self.floor
+                print(f"New target height: {cm}")
+            
+            if(cm == 0):
+                self.log.debug("Ending up function, drone cannot go any higher")
+                return
+            elif (cm < 20):
+                self.log.debug("Value given to move up less than 20. Returning.")
+                return
+            else:
+                self.log.debug(f"Drone moving down {cm}cm to {cm + currHeight}cm")
+                self.drone.move_down(cm) 
+                self.log.info(f"Drone moved down successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
+        else:
+            self.log.warning("ERROR! Aborting command, drone battry less than 10%. Making emergency landing")
+            self.land()
+
     def forward_cm(self, cm):
         self.log.debug(f"forward_cm function called | cm: {cm}")
-        self.log.info(f"Drone position prior to moving: [{self.x}, {self.y}]")
-        self.drone.move_forward(cm)
-        self.x += cm
-        self.log.info(f"Drone moved forward successfully. Current postion: [{self.x}, {self.y}]")
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            self.log.info(f"Drone position prior to moving: [{self.x}, {self.y}]")
+            self.drone.move_forward(cm)
+            self.x += cm
+            self.log.info(f"Drone moved forward successfully. Current postion: [{self.x}, {self.y}]")
+        else:
+            self.log.warning("ERROR! Aborting command, drone battry less than 10%. Making emergency landing")
+            self.land()
     
     def backward_cm(self, cm):
         self.log.debug(f"backward_cm function called | cm: {cm}")
-        self.log.info(f"Drone position prior to moving backwards: [{self.x}, {self.y}]")
-        self.drone.move_back(cm)
-        self.x -= cm
-        self.log.info(f"Drone move backwards  successfully. Current position: [{self.x}, {self.y}]")
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            self.log.info(f"Drone position prior to moving backwards: [{self.x}, {self.y}]")
+            self.drone.move_back(cm)
+            self.x -= cm
+            self.log.info(f"Drone move backwards  successfully. Current position: [{self.x}, {self.y}]")
+        else:
+            self.log.warning("ERROR! Aborting command, drone battery less than 10%. Making emergency landing")
+            self.land()
+
 
     def right_cm(self, cm):
         self.log.debug(f"right_cm function called | cm: {cm}")
-        self.log.info(f"Drone position prior to moving right: [{self.x}, {self.y}]")
-        self.drone.move_right(cm)
-        self.y += cm
-        self.log.info(f"Drone moved right successfully. Current position: [{self.x}, {self.y}]")
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            self.log.info(f"Drone position prior to moving right: [{self.x}, {self.y}]")
+            self.drone.move_right(cm)
+            self.y += cm
+            self.log.info(f"Drone moved right successfully. Current position: [{self.x}, {self.y}]")
+        else:
+            self.log.warning("ERROR! Aborting command, drone battery less than 10%. Making emergency landing")
+            self.land()
+
 
     def left_cm(self, cm):
         self.log.debug(f"left_cm function called. | cm: {cm}")
-        self.log.info(f"Drone position prior to moving left: [{self.x}, {self.y}]")
-        self.drone.move_left(cm)
-        self.y -= cm
-        self.log.info(f"Drone moved left successfully. Current position: [{self.x}, {self.y}]")
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            self.log.info(f"Drone position prior to moving left: [{self.x}, {self.y}]")
+            self.drone.move_left(cm)
+            self.y -= cm
+            self.log.info(f"Drone moved left successfully. Current position: [{self.x}, {self.y}]")
+        else:
+            self.log.warning("ERROR! Aborting command, drone battery less than 10%. Making emergency landing")
+            self.land()
+
 
     def return_home(self, direct=False):
         self.log.debug(f"return_home function called. | direct = {direct}")
-        self.log.info(f"Drone position prior to returning home : [{self.x}, {self.y}]")
-        if direct:
-            self.drone.go_xyz_speed(-self.x, self.y, 0, 10)
-        else:
-            if (self.x < 0):
-                self.forward_cm(-self.x)
+        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
+            self.log.info(f"Drone position prior to returning home : [{self.x}, {self.y}]")
+            if direct:
+                self.drone.go_xyz_speed(-self.x, self.y, 0, 10)
             else:
-                self.backward_cm(self.x)
-            
-            if (self.y < 0):
-                self.right_cm(-self.y)
-            else:
-                self.left_cm(self.y)
-        self.x = 0
-        self.y = 0
-        self.log.info(f"Drone returned home successfully. Current position: [{self.x}, {self.y}]")
+                if (self.x < 0):
+                    self.forward_cm(-self.x)
+                else:
+                    self.backward_cm(self.x)
+                
+                if (self.y < 0):
+                    self.right_cm(-self.y)
+                else:
+                    self.left_cm(self.y)
+            self.x = 0
+            self.y = 0
+            self.log.info(f"Drone returned home successfully. Current position: [{self.x}, {self.y}]")
+        else: 
+            self.log.warning("ERROR! Aborting command, drone battery less than 10%. Making emergency landing")
+            self.land()
+
 
 #------------------------- END OF HeadsUpTello CLASS ---------------------------
