@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from Core.DummyDrone import DummyDrone
 from Core.Transform import Transform
 import Core.dji_matrix as djim
 import logging, logging.config
@@ -12,7 +13,7 @@ from Core.Vectors import Vector3
 
 #------------------------- BEGIN HeadsUpTello CLASS ----------------------------
 
-class DroneController():
+class DummyController():
     """
     An interface from Team "Heads-Up Flight" to control a DJI Tello RoboMaster 
     Drone. Inherits from the djitellopy.Tello class.
@@ -37,24 +38,26 @@ class DroneController():
         # instead of inheritance (is-a) so that we can choose between the real
         # drone and a simulator. If we had used inheritance, we would be forced
         # to choose one or the other.
-        self.drone_name = drone_name
-        self.mission_name = mission_name
-        self.drone:Tello = drone_baseobject
-        self.drone.LOGGER.setLevel(debug_level)
-        self.floor = floor
-        self.ceiling = ceiling
+        self.drone_name = drone_name; 
+        self.connected = False; 
+        
+        self.drone = DummyDrone(); 
 
-        self.transform = Transform();  
+        self.mission_name = mission_name; 
+        self.floor = floor; 
+        self.ceiling = ceiling; 
 
-        self.MIN_TAKEOFF_POWER = 15
-        self.MIN_OPERATING_POWER = 10
+        self.transform = Transform(); 
 
+        self.x = 0; 
+        self.y = 0; 
+
+        self.MIN_TAKEOFF_POWER = 15; 
+        self.MIN_OPERATING_POWER = 10; 
 
         now = datetime.now().strftime("%Y%m%d.%H"); 
-
         logfile = f"{self.drone_name}.{now}.log"; 
         logname = self.drone_name; 
-        
         # Thanks to Yogesh Yadav's example with Stream Handler and File Handler:
         #   https://stackoverflow.com/questions/7507825 (not the winning answer)
         # Configure the logger so that DEBUG messages and higher are logged to file but
@@ -102,11 +105,9 @@ class DroneController():
 
 
         try:
-            self.drone.connect(); 
-            self.connected = True; 
-            self.log.info("Drone connected successfully"); 
-            self.start_barometer = self.drone.get_barometer(); 
-        
+            #self.drone.connect()
+            self.connected = True
+            self.log.info("Drone connected successfully") 
         except Exception as excp:
             print(f"ERROR: could not connect to Trello Drone: {excp}")
             print(f" => Did you pass in a valid drone base object?")
@@ -117,8 +118,7 @@ class DroneController():
             self.log.warning("Could not connect to drone")
             self.disconnect()
             raise
-        return
-
+        return 
 
     def __del__(self):
         """ Destructor that gracefully closes the connection to the drone. """
@@ -128,130 +128,29 @@ class DroneController():
 
 
     def disconnect(self):
-        """ Gracefully close the connection with the drone. """
-        self.drone.end()
+        """ Gracefully close the connection with the drone. """ 
         self.connected = False
         self.log.info("Drone disconnected")
         print(f"Drone connection closed gracefully")
-        return
+        return; 
+              
 
-
-    def top_led_color(self, red:int, green:int, blue:int):
-        """
-        Change the top LED to the specified color. The colors don't match the
-        normal RGB palette very well.
-
-        Arguments
-            red:   0-255
-            green: 0-255
-            blue:  0-255
-        """
-
-        r = djim.capped_color(red)
-        g = djim.capped_color(green)
-        b = djim.capped_color(blue)
-        cmd = f"EXT led {r} {g} {b}"
-        self.drone.send_control_command(cmd)
-        return
-            
-
-    def top_led_off(self):
-        """ Turn off the top LED. """
-
-        cmd = f"EXT led 0 0 0"
-        self.drone.send_control_command(cmd)
-        return
-
-
-    def matrix_pattern(self, flattened_pattern:str, color:str='b'):
-        """
-        Show the flattened pattern on the LED matrix. The pattern should be 
-        64 letters in a row with values either (r)ed, (b)lue, (p)urple, or (0)
-        off. The first 8 characters are the top row, the next 8 are the second
-        row, and so on.
-        
-        Arguments
-            flattened_pattern: see examples in dji_matrix.py
-            color:             'r', 'b', or 'p'
-        """
-
-        if color.lower() not in "rpb":
-            color = 'b'
-        cmd = f"EXT mled g {flattened_pattern.replace('*', color.lower())}"
-        self.drone.send_control_command(cmd)
-        return
-
-
-    def matrix_off(self):
-        """ Turn off the 64 LED matrix. """
-        
-        off_pattern = "0" * 64
-        self.matrix_pattern(off_pattern)
-        return
-
-
-    def get_battery(self):
+    def get_battery(self) -> int:
         """ Returns the drone's battery level as a percent. """
         self.log.debug(f"get_battery function called -- Output: {self.drone.get_battery()}")
-        return self.drone.get_battery()
+        return 100; 
 
 
-    def get_barometer(self):
+    def get_barometer(self) -> int:
         """ Returns the drone's current barometer reading in cm. """
         self.log.debug(f"get_barometer function called -- Output: {self.drone.get_barometer()}")
-        return self.drone.get_barometer()
+        return 2200; 
 
 
-    def get_temperature(self):
+    def get_temperature(self) -> int:
         """ Returns the drone's internal temperature in °F. """
         self.log.debug(f"get_temperature function called -- Output: {self.drone.get_temperature()}")
-        return self.drone.get_temperature() 
-
-
-    def fly_to_mission_ceiling(self):
-        self.log.debug(f"fly_to_mission_ceiling function called -- Going to {self.ceiling} cm")
-        if(self.drone.get_battery() > self.MIN_OPERATING_POWER):
-            h = self.drone.get_height()
-            while(h < self.ceiling):
-                if h + 20 < self.ceiling:
-                    self.drone.move_up(20)
-                    print("Trying to move up by 20 units")
-                else:
-                    print("I cannot move up anymore!")
-                    break
-                h = self.drone.get_height()
-                print(f"My current height is: '{h}'")
-                if h == self.ceiling:
-                    break
-            print("Ceiling reached | Hovering for 10 seconds to test measurement")
-            self.log.info(f"Mission ceiling reached. Drone height: {self.drone.get_height()} cm")
-            time.sleep(10)
-        else:
-            self.log.warning("ERROR: Drone battery less than 10%, aborting command and landing")
-            self.land()
-
-    def fly_to_mission_floor(self):
-        self.log.debug(f"fly_to_mission_floor function called -- Going to {self.floor} cm")
-        if (self.drone.get_battery() > self.MIN_OPERATING_POWER):
-            h = self.drone.get_height()
-            while (h > self.floor):
-                if h + 20 > self.floor:
-                    self.drone.move_down(20)
-                    print("Trying to move down 20 units")
-                else:
-                    print("I have reached the floor already, I can't go lower! D:")
-                    break
-                h = self.drone.get_height()
-                print(f"My current height is: '{h}'")
-                if h == self.floor:
-                    break
-            print("Floor reached | Hovering for 10 seconds to test measurement")
-            self.log.info(f"Mission floor reached. Drone height: {self.drone.get_height()} cm")
-            time.sleep(10)
-        else:
-            self.log.warning("ERROR: Drone battery less than 10%, aborting command and landing")
-            self.land()
-        
+        return 25;  
 
 
 #------------------------- END OF HeadsUpTello CLASS ---------------------------

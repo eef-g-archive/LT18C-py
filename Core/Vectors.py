@@ -5,7 +5,7 @@ class Vector3():
         self.z = z; 
 
     def __add__(self, __o):
-        if isinstance(__o, [float, int]):
+        if isinstance(__o, (float, int)):
             x = self.x + __o; 
             y = self.y + __o; 
             z = self.z + __o; 
@@ -15,9 +15,9 @@ class Vector3():
             z = self.z + __o.z; 
         else:
             raise Exception("An object type of Vector3 cannot be added with the type of " + str(__o.type));   
-        return Vector3(x, y, z);
+        return Vector3(x, y, z); 
     def __sub__(self, __o:object):
-        if isinstance(__o, [float, int]):
+        if isinstance(__o, (float, int)):
             x = self.x - __o; 
             y = self.y - __o; 
             z = self.z - __o; 
@@ -29,7 +29,7 @@ class Vector3():
             raise Exception("An object type of Vector3 cannot be subtracted with the type of " + str(__o.type));   
         return Vector3(x, y, z);  
     def __mul__(self, __o):
-        if isinstance(__o, [float, int]):
+        if isinstance(__o, (float, int)):
             x = self.x * __o; 
             y = self.y * __o; 
             z = self.z * __o; 
@@ -41,7 +41,7 @@ class Vector3():
             raise Exception("An object type of Vector3 cannot be multiplied with the type of " + str(__o.type));   
         return Vector3(x, y, z);  
     def __div__(self, __o):
-        if isinstance(__o, [float, int]):
+        if isinstance(__o, (float, int)):
             x = self.x / __o; 
             y = self.y / __o; 
             z = self.z / __o; 
@@ -67,25 +67,25 @@ class Vector3():
     def __neg__(self):
         return Vector3(-self.x, -self.y, -self.z); 
     def __iadd__(self, __o):
-        return self + __o; 
+        return self.__add__(__o); 
     def __idiv__(self, __o):
-        return self / __o; 
+        return self.__div__(__o); 
     def __imul__(self, __o):
-        return self * __o; 
+        return self.__mul__(__o); 
     def __isub__(self, __o):
-        return self - __o; 
+        return self.__sub__(__o); 
     def __pow__(self, __o):
         return Vector3(self.x ** __o, self.y ** __o, self.z ** __o); 
     def __abs__(self):
         return Vector3(abs(self.x), abs(self.y), abs(self.y)); 
     def __str__(self):
-        return "Vector3(" + self.x + ", " + self.y + ", " + self.z + ")"; 
+        return "Vector3(" + str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ")"; 
 
     def distance(self, other):
         return Vector3.Distance(self, other); 
 
     @staticmethod
-    def Distance(p1, p2):
+    def Distance(p1, p2): 
         return ((p1.x - p2.x) ** 2  + (p1.y - p2.y) ** 2 + (p1.z - p2.z) ** 2) ** .5; 
 
     @property
@@ -94,5 +94,9 @@ class Vector3():
 
     @property
     def normalized(self):
-        return self / self.magnitude; 
+        return self.__div__(self.magnitude); 
+
+    @property
+    def to_unity(self): 
+        return Vector3(self.y, self.z, self.x); 
         
