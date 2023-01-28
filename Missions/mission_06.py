@@ -17,7 +17,6 @@ import logging
 
 # Custom modules for the drones
 from djitellopy import Tello
-from headsupflight import HeadsUpTello
 from Core.LT18C import DroneController;
 from Core.motor_control import MotorController;
 
@@ -32,7 +31,7 @@ def mission06():
     mission_params = [30, 180, "PT-Student", "Mission_06"]
     drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
-    drone.takeoff()
+    motor.takeoff()
 
     userInput = 'h'; 
     distance_to_travel = 20; 
@@ -43,24 +42,24 @@ def mission06():
         print("~" * 15)
         try:
             if 'f' in userInput:
-                drone.forward_cm(distance_to_travel)
+                motor.forward_cm(distance_to_travel)
             elif 'b' in userInput:
-                drone.backward_cm(distance_to_travel)
+                motor.backward_cm(distance_to_travel)
             elif 'r' in userInput:
-                drone.right_cm(distance_to_travel)
+                motor.right_cm(distance_to_travel)
             elif 'l' in userInput:
-                drone.left_cm(distance_to_travel)
+                motor.left_cm(distance_to_travel)
             elif 'home' in userInput: 
                 if go_straight:
-                    drone.return_home(go_straight)
+                    motor.return_home(go_straight)
                 else:
-                    drone.return_home()
+                    motor.return_home()
             userInput = input()
 
         except:
             if userInput == 'q':
                 print("Landing drone. . .")
-                drone.land()
+                motor.land()
                 break
     drone.disconnect()
 
