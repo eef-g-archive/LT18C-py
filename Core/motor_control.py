@@ -1,68 +1,160 @@
+from enum import Enum;
+from Core.Vectors import Vector3
 from Core.LT18C import DroneController 
 
+
+class pathing(Enum):
+    direct = 0
+    curved = 1
+    triangle = 3
+    square = 4
+
+
 class MotorController():
+ 
+    def log_movement(self, position: Vector3):
+        self.log.debug(f"Movement function called | new Position: {str(position)}"); 
+        self.log.info(f"Drone position prior to moving: {str(self.controller.transform.position)}"); 
+    
+    def log_post_movement(self, position: Vector3): 
+        self.log.info(f"Drone moved successfully. Current Position: {str(self.controller.transform.position)}"); 
+
+    def log_rotation(self, rotation: Vector3): 
+        self.log.debug(f"Rotational function called | new Rotation: {str(rotation)}"); 
+        self.log.info(f"Drone rotation prior to moving: {str(self.controller.transform.rotation)}"); 
+    
+    def log_post_rotation(self, rotation: Vector3):
+        self.log.info(f"Drone rotated successfully. Current Rotation: {str(self.controller.transform.rotation)}"); 
 
     def __init__(self, controller: DroneController):
-        self.controller = controller;  
-
+        self.controller = controller;   
         self.rotation:float = 0; 
 
+        self.movement_invoke = [self.log_movement]; 
+        self.movement_callback = [self.log_post_movement]; 
+    
+        self.rotation_invoke = [self.log_rotation]; 
+        self.rotation_callback = [self.log_post_rotation];  
 
     @property
     def log(self):
         return self.controller.log; 
+    @property
+    def transform(self):
+        return self.controller.transform; 
+
+    @property
+    def drone(self):
+        return self.controller.drone; 
 
     @property
     def x(self):
-        return self.controller.position.x;  
+        return self.controller.transform.position.x;  
     @property
     def y(self):
-        return self.controller.position.y; 
+        return self.controller.transform.position.y; 
+    @property
+    def z(self):
+        return self.controller.transform.position.z; 
 
     @x.setter
     def x(self, new_value:float):
-        self.controller.position.x = new_value; 
+        self.controller.transform.position.x = new_value; 
     @y.setter
     def y(self, new_value:float):
-        self.controller.position.y = new_value; 
+        self.controller.transform.position.y = new_value; 
+    @z.setter
+    def z(self, new_value:float):
+        self.controller.transform.position.z = new_value; 
     
 
+    ########################################################################
+    ################### INVOKE/CALLBACK FUNCTIONS ##########################
+    ########################################################################
+
+    def add_movement_invoke(self, invoke_func:function):
+        self.movement_invoke.append(invoke_func); 
     
+    def add_movement_callback(self, callback_func:function):
+        self.movement_callback.append(callback_func); 
+
+    ########################################################################
+    ###################     MOVEMENT FUNCTIONS    ##########################
+    ########################################################################
+ 
+    def rotate_relative(self, rotation: Vector3): 
+        for invoke in self.rotation_invoke:
+            invoke(rotation); 
+    
+        if(rotation.y > 0):
+            self.drone.rotate_clockwise(rotation.y); 
+        elif(rotation.y < 0):
+            self.drone.rotate_counter_clockwise(rotation.y); 
+
+        self.rotation += rotation;          
+
+        for callback in self.rotation_callback:
+            callback(rotation); 
+    
+    def rotation_relative_angular(self, degree: float):
+        self.rotate_relative(Vector3(0, degree, 0));  
+
+        
+
+    def move_absolute(self, position: Vector3, path:pathing = pathing.direct): 
+        match path:
+            case pathing.direct: 
+                distance = self.transform.position.distance(position); 
+                self.rotate_relative(self.transform.look_at(position, True)); 
+                self.forward_cm(distance);   
+                return; 
+            case pathing.triangle:
+                return; 
+            case pathing.square:
+                return; 
+            case _:
+                raise Exception("Given pathing does not exist!"); 
+
+
+
+    def move_relative(self, position: Vector3):
+        for invoke in self.movement_invoke:
+            invoke(position); 
+    
+        speed = 50; 
+
+        self.drone.go_xyz_speed(position.x, position.y, position.z, speed);  
+
+        self.transform.position += self.transform.forward * position.y;     
+        self.transform.position += self.transform.right * position.x;       
+        self.transform.position += self.transform.up * position.z;          
+
+        for callback in self.movement_callback:
+            callback(position); 
+
+    def move_relative_cm(self, x, y, z = 0):  
+        self.move_relative(Vector3(x, y, z)); 
+
     def forward_cm(self, cm):
-        self.log.debug(f"forward_cm function called | cm: {cm}")
-        self.log.info(f"Drone position prior to moving: [{self.x}, {self.y}]")
-        self.controller.drone.move_forward(cm)
-        self.x += cm
-        self.log.info(f"Drone moved forward successfully. Current position: [{self.x}, {self.y}]")
+        self.move_relative_cm(0, cm); 
     
-    def backward_cm(self, cm):
-        self.log.debug(f"backward_cm function called | cm: {cm}")
-        self.log.info(f"Drone position prior to moving backwards: [{self.x}, {self.y}]")
-        self.controller.drone.move_back(cm)
-        self.x -= cm
-        self.log.info(f"Drone move backwards  successfully. Current position: [{self.x}, {self.y}]")
+    def backward_cm(self, cm): 
+        self.move_relative_cm(0, -cm); 
 
-    def right_cm(self, cm):
-        self.log.debug(f"right_cm function called | cm: {cm}")
-        self.log.info(f"Drone position prior to moving right: [{self.x}, {self.y}]")
-        self.controller.drone.move_right(cm)
-        self.y += cm
-        self.log.info(f"Drone moved right successfully. Current position: [{self.x}, {self.y}]")
+    def right_cm(self, cm): 
+        self.move_relative_cm(-cm, 0); 
 
-    def left_cm(self, cm):
-        self.log.debug(f"left_cm function called. | cm: {cm}")
-        self.log.info(f"Drone position prior to moving left: [{self.x}, {self.y}]")
-        self.controller.drone.move_left(cm)
-        self.y -= cm
-        self.log.info(f"Drone moved left successfully. Current position: [{self.x}, {self.y}]")
-  
+    def left_cm(self, cm): 
+        self.move_relative_cm(cm, 0);  
+
+
     def return_home(self, direct=False):
         self.log.debug(f"return_home function called. | direct = {direct}");
 
-        if (self.controller.drone.get_battery() > self.controller.MIN_OPERATING_POWER):
+        if (self.drone.get_battery() > self.controller.MIN_OPERATING_POWER):
             self.log.info(f"Drone position prior to returning home : [{self.x}, {self.y}]")
             if direct:
-                self.controller.drone.go_xyz_speed(-self.x, self.y, 0, 10)
+                self.drone.go_xyz_speed(-self.x, self.y, 0, 10); 
             else:
                 if (self.x < 0):
                     self.forward_cm(-self.x)
@@ -80,15 +172,12 @@ class MotorController():
             self.log.info(f"Drone returned home successfully. Current position: [{self.x}, {self.y}]")
         else: 
             self.log.warning(f"ERROR! Aborting command, drone battery less than {self.controller.MIN_OPERATING_POWER}%. Making emergency landing")
-            self.land(); 
-
+            self.land();  
     
-
-
     def up_cm(self, cm):
         self.log.debug(f"up function called -- cm: {cm}") 
-        if (self.controller.drone.get_battery() > self.controller.MIN_OPERATING_POWER):
-            currHeight = self.controller.drone.get_barometer() - self.controller.start_barometer
+        if (self.drone.get_battery() > self.controller.MIN_OPERATING_POWER):
+            currHeight = self.drone.get_barometer() - self.controller.start_barometer
             
             # First, see if we can adjust the cm value to fit within the ceiling
             if(currHeight + cm > self.controller.ceiling):
@@ -104,17 +193,16 @@ class MotorController():
                 return
             else:
                 self.log.debug(f"Drone moving up {cm}cm to {cm + currHeight}cm")
-                self.controller.drone.move_up(cm) 
-                self.log.info(f"Drone moved up successfully. New height: {self.controller.drone.get_barometer() - self.controller.start_barometer}")
+                self.drone.move_up(cm) 
+                self.log.info(f"Drone moved up successfully. New height: {self.drone.get_barometer() - self.controller.start_barometer}")
         else:
             self.log.warning(f"ERROR! Aborting command, drone battery less than {self.controller.MIN_OPERATING_POWER}%. Making emergency landing")
             self.land()
 
-    
     def down_cm(self, cm):
         self.log.debug(f"up function called -- cm: {cm}") 
-        if (self.controller.drone.get_battery() > self.controller.MIN_OPERATING_POWER):
-            currHeight = self.controller.drone.get_barometer() - self.controller.start_barometer
+        if (self.drone.get_battery() > self.controller.MIN_OPERATING_POWER):
+            currHeight = self.drone.get_barometer() - self.controller.start_barometer
     
             # For the actual up(cm) function, the currHeight will not exist but will be a variable in the drone object
             # --- Same goes for ceiling ---
@@ -132,23 +220,22 @@ class MotorController():
                 return
             else:
                 self.log.debug(f"Drone moving down {cm}cm to {cm + currHeight}cm")
-                self.controller.drone.move_down(cm) 
-                self.log.info(f"Drone moved down successfully. New height: {self.controller.drone.get_barometer() - self.controller.start_barometer}")
+                self.drone.move_down(cm) 
+                self.log.info(f"Drone moved down successfully. New height: {self.drone.get_barometer() - self.controller.start_barometer}")
         else:
             self.log.warning(f"ERROR! Aborting command, drone battery less than {self.controller.MIN_OPERATING_POWER}%. Making emergency landing")
             self.land()  
 
     def takeoff(self):
-        if (self.controller.drone.get_battery() > self.controller.MIN_TAKEOFF_POWER):
+        if (self.drone.get_battery() > self.controller.MIN_TAKEOFF_POWER):
             self.log.info("*** TAKEOFF ***")
-            self.controller.drone.takeoff()
-            self.log.info(f"Drone height at takeoff: {self.controller.drone.get_height()} cm")
+            self.drone.takeoff()
+            self.log.info(f"Drone height at takeoff: {self.drone.get_height()} cm")
         else:
             self.log.warning("*** TAKEOFF FAILED ***")
             self.log.warning("Drone battery less than 15%, aborting takeoff")
 
-
     def land(self):
         self.log.info("*** LANDING ***")
-        self.controller.drone.land()
+        self.drone.land()
 

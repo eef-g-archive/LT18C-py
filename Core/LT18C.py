@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+from Core.Transform import Transform
 import Core.dji_matrix as djim
 import logging, logging.config
 import time 
 from djitellopy import Tello; 
 from datetime import datetime
 
-from Core.objects import Vector3
+from Core.Vectors import Vector3
 
 
 #------------------------- BEGIN HeadsUpTello CLASS ----------------------------
@@ -43,8 +44,7 @@ class DroneController():
         self.floor = floor
         self.ceiling = ceiling
 
-        self.position = Vector3(0,0,0); 
-        self.rotation = 0.0; 
+        self.transform = Transform(); 
 
         self.x = 0
         self.y = 0
