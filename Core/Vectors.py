@@ -1,3 +1,4 @@
+import math
 class Vector3():
     def __init__(self, x = 0.0, y = 0.0, z = 0.0):
         self.x = x; 
@@ -86,7 +87,7 @@ class Vector3():
 
     @staticmethod
     def Distance(p1, p2): 
-        return ((p1.x - p2.x) ** 2  + (p1.y - p2.y) ** 2 + (p1.z - p2.z) ** 2) ** .5; 
+        return math.sqrt(((p2.x - p1.x) ** 2  + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2)); 
 
     @property
     def magnitude(self):
@@ -94,9 +95,9 @@ class Vector3():
 
     @property
     def normalized(self):
-        return self.__div__(self.magnitude); 
+        return self.__div__(self.magnitude) 
 
     @property
     def to_unity(self): 
-        return Vector3(self.y, self.z, self.x); 
+        return Vector3(self.y, self.z, self.x)
         

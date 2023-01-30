@@ -17,6 +17,7 @@ import logging
 
 # Custom modules for the drones
 from djitellopy import Tello 
+from Core.LT18C import DroneController
 from Core.LT18C_Dummy import DummyController
 from Core.Vectors import Vector3;
 from Core.motor_control import MotorController;
@@ -30,7 +31,7 @@ from Core.motor_control import MotorController;
 def mission06():
     my_drone = Tello(); 
     mission_params = [30, 180, "PT-Student", "Mission_06"]; 
-    drone:DummyController = DummyController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
+    drone= DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
 
     motor.takeoff()
@@ -51,7 +52,7 @@ def mission06():
         elif 'l' in userInput:
             motor.left_cm(distance_to_travel)
         elif 'j' in userInput:
-            motor.move_absolute(Vector3(20, 50, 0)); 
+            motor.move_absolute(Vector3(20, 20, 0)); 
 
         elif 'home' in userInput: 
             if go_straight:

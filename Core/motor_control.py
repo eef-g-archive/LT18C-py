@@ -89,9 +89,9 @@ class MotorController():
             invoke(self.drone, rotation); 
     
         if(rotation.y > 0):
-            self.drone.rotate_clockwise(rotation.y); 
+            self.drone.rotate_clockwise(int(rotation.y)); 
         elif(rotation.y < 0):
-            self.drone.rotate_counter_clockwise(rotation.y); 
+            self.drone.rotate_counter_clockwise(int(rotation.y)); 
 
         self.controller.transform.rotation.y += rotation.y;          
 
@@ -131,7 +131,7 @@ class MotorController():
     
         speed = 50; 
 
-        self.drone.go_xyz_speed(position.x, position.y, position.z, speed);  
+        self.drone.go_xyz_speed(int(position.x), int(position.y), int(position.z), speed);  
 
         self.transform.position += self.transform.forward * position.x;     
         self.transform.position += self.transform.right * position.y;       

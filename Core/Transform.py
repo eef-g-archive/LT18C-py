@@ -13,7 +13,7 @@ class Transform():
         y =  math.cos(self.rotation.x) * math.sin(self.rotation.y); 
         z = -math.sin(self.rotation.x); 
         x =  math.cos(self.rotation.x) * math.cos(self.rotation.y); 
-        return Vector3(x, y, z); 
+        return Vector3(z, y, z); 
         
     @property
     def right(self): 
@@ -38,12 +38,13 @@ class Transform():
         difference = self.position - other; 
         print("difference: ", difference);  
 
-        dir:Vector3 = difference.normalized.to_unity;  
 
-        print("dir: ", dir); 
-        degree = math.degrees(math.tan(dir.z / dir.x));  
+        direction:Vector3 = difference.normalized.to_unity;  
+
+        print("dir: ", direction); 
+        degree = math.degrees(math.atan(direction.z / direction.x))  
         
-        print("degree: ", degree, "\n"); 
+        print("degree: ", degree, "\n") 
         
         if apply: self.rotation.y = degree; 
         return Vector3(self.rotation.x, degree, self.rotation.z); 
