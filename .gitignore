@@ -12,4 +12,4 @@
 # Built Visual Studio Code Extensions
 *.vsix
 
-__pychache__/
+__pychache__/*

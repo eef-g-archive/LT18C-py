@@ -6,10 +6,14 @@ from Core.LT18C import DroneController
 
 class pathing(Enum):
     direct = 0
-    curved = 1
+    indirect = 1
+    
+    lock = 2
+
     triangle = 3
     square = 4
     square_locked = 5; 
+
 
 
 
@@ -121,13 +125,16 @@ class MotorController():
     def rotate_absolute_angle(self, angle: float): 
         self.rotate_absolute(Vector3(0, angle, 0)); 
      
+#######################################################################
 
     def move_absolute(self, position: Vector3, path:pathing = pathing.direct):
         
-        relative_rotation = (self.transform.look_at(position) - self.transform.rotation); 
+        absolute_rotation = self.transform.look_at(position); 
+        relative_rotation = (absolute_rotation - self.transform.rotation); 
         distance = self.transform.position.distance(position);  
 
-        match path:
+        match path: 
+
             case pathing.direct:  
 
                 self.rotate_absolute(self.transform.look_at(position)); 
@@ -210,6 +217,32 @@ class MotorController():
                 self.forward_cm(second_distance); 
 
                 return; 
+            case pathing.indirect: 
+                
+                dir = (self.transform.position - position).normalized; 
+
+                first_distance = distance * math.cos(math.radians(relative_rotation.y)); 
+
+                #self.move_relative(dir * first_distance); 
+                go_back = (-self.transform.forward * first_distance + self.transform.position).distance(position); 
+                go_forw = (self.transform.forward * first_distance + self.transform.position).distance(position); 
+                if(go_back < go_forw):
+                    self.backward_cm(first_distance); 
+                else:
+                    self.forward_cm(first_distance); 
+
+                second_distance = self.transform.position.distance(position); 
+
+                go_r = (-self.transform.right * second_distance + self.transform.position).distance(position); 
+                go_l = (self.transform.right * second_distance + self.transform.position).distance(position); 
+                
+                if(go_r < go_l): 
+                    self.left_cm(second_distance); 
+                else:
+                    self.right_cm(second_distance); 
+                
+
+                return; 
             case _:
                 raise Exception("Given pathing does not exist!"); 
 
@@ -226,6 +259,13 @@ class MotorController():
         x = int(round(position.z)); 
         y = int(round(position.x)); 
         z = int(round(position.y)); 
+
+        print("move command: ", x, y, z); 
+
+        #if((abs(x) < 20 and x != 0) or (abs(y) < 20 and y != 0) or (abs(z) < 20 and z != 0)):
+        #    print("value less than 20 found, skipping"); 
+        #    return; 
+
 
         if x > 0:
             self.drone.move_forward(x); 
