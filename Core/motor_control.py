@@ -98,10 +98,12 @@ class MotorController():
         for invoke in self.rotation_invoke:
             invoke(self.controller, rotation); 
     
-        if(rotation.y > 0):
-            self.drone.rotate_clockwise(int(rotation.y)); 
+        if(rotation.y > 0): 
+            self.drone.rotate_clockwise(abs(int(round(rotation.y)))); 
         elif(rotation.y < 0):
-            self.drone.rotate_counter_clockwise(int(rotation.y)); 
+            self.drone.rotate_counter_clockwise(abs(int(round(rotation.y)))); 
+        else:
+            pass; 
 
         self.controller.transform.rotation.y += rotation.y;          
 
@@ -133,11 +135,28 @@ class MotorController():
                 return; 
 
             case pathing.triangle: 
-                first_turn_angle = 180 / 3;  
+                first_turn_angle = 180 / 3;    
+                second_turn_angle = -first_turn_angle * 2;     
+ 
 
-            case pathing.square: 
-                first_turn_angle = 180 / 4;  
-                second_turn_angle = -first_turn_angle * 2;    
+                if(relative_rotation.y < 0):
+                    first_turn_angle *= -1; 
+                    second_turn_angle *= -1; 
+                
+                relative_rotation.y += first_turn_angle;  
+                
+                self.rotate_relative(relative_rotation); 
+                self.forward_cm(distance); 
+                self.rotate_relative_angle(second_turn_angle); 
+                self.forward_cm(distance);  
+                return;  
+
+            case pathing.square:  
+
+                if path == pathing.square:
+                    first_turn_angle = 180 / 4; 
+                 
+                second_turn_angle = -first_turn_angle * 2;     
 
                 if path == pathing.square:
                     distance = ((distance ** 2) / 2) ** .5; 
@@ -146,7 +165,8 @@ class MotorController():
                     first_turn_angle *= -1; 
                     second_turn_angle *= -1; 
                 
-                relative_rotation.y += first_turn_angle; 
+                relative_rotation.y += first_turn_angle;  
+
                 self.rotate_relative(relative_rotation); 
                 self.forward_cm(distance); 
                 self.rotate_relative_angle(second_turn_angle); 
@@ -173,9 +193,9 @@ class MotorController():
 
 
                 #FIX
-                first_distance = abs(difference.y) 
+                first_distance = abs(difference.z) 
 
-                if(adjust_angle == 90 or adjust_angle == 270):
+                if(abs(adjust_angle) == 90 or abs(adjust_angle) == 270):
                     first_distance = abs(difference.x)
 
                 self.forward_cm(first_distance);  
@@ -203,8 +223,21 @@ class MotorController():
         for invoke in self.movement_invoke:
             invoke(self.controller, position);  
 
-        self.drone.go_xyz_speed(int(position.z), int(position.x), int(position.y), speed);  
+        x = int(round(position.z)); 
+        y = int(round(position.x)); 
+        z = int(round(position.y)); 
 
+        if x > 0:
+            self.drone.move_forward(x); 
+        elif x < 0:
+            self.drone.move_back(abs(x)); 
+
+        if y > 0:
+            self.drone.move_right(y); 
+        elif y < 0:
+            self.drone.move_left(abs(y)); 
+
+        
         self.transform.position += self.transform.forward * position.z;     
         self.transform.position += self.transform.right * position.x;       
         self.transform.position += self.transform.up * position.y;     
