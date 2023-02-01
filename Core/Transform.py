@@ -1,51 +1,58 @@
 import math
+import numpy as np; 
 from Core.Vectors import Vector3 
 
 class Transform():
     def __init__(self):
-        self.position = Vector3(0, 0, 0); 
-        # pitch, yaw, roll. We're using this since we shouldn't have to rotate three at a time. 
-        #   If we do then we'll have to use Quaternions to prevent gimbal lock. 
+        self.position = Vector3(0, 0, 0);  
         self.rotation = Vector3(0, 0, 0); 
 
     @property
-    def forward(self):
-        y =  math.cos(self.rotation.x) * math.sin(self.rotation.y); 
-        z = -math.sin(self.rotation.x); 
-        x =  math.cos(self.rotation.x) * math.cos(self.rotation.y); 
-        return Vector3(z, y, z); 
+    def pitch(self):
+        return math.radians(self.rotation.x); 
+    @property
+    def yaw(self):
+        return math.radians(self.rotation.y); 
+    @property
+    def roll(self):
+        return math.radians(self.rotation.z); 
+
+    @property
+    def forward(self): 
+
+        print("\nforward called:"); 
+
+        x =  math.cos(self.pitch) * math.sin(self.yaw); 
+        y = -math.sin(self.pitch); 
+        z =  math.cos(self.pitch) * math.cos(self.yaw); 
+
+        print("    ", x, y, z); 
+        return Vector3(x, y, z); 
         
     @property
-    def right(self): 
-        # x y z -> y z x
-        y =  math.cos(self.rotation.y); 
-        z =  0; 
-        x = -math.sin(self.rotation.y); 
+    def right(self):   
+        x =  math.cos(self.yaw); 
+        y =  0; 
+        z = -math.sin(self.yaw); 
         return Vector3(x, y, z); 
 
     @property
-    def up(self):
-        y = math.sin(self.rotation.x) * math.sin(self.rotation.y); 
-        z = math.cos(self.rotation.x); 
-        x = math.sin(self.rotation.x) * math.cos(self.rotation.y); 
-        return Vector3(x, y, z); 
+    def up(self):  
+        x = math.sin(self.pitch) * math.sin(self.yaw); 
+        y = math.cos(self.pitch); 
+        z = math.sin(self.pitch) * math.cos(self.yaw); 
 
-    def look_at(self, other:Vector3, apply = False) -> Vector3:     
-        
-        print("\npos: ", self.position); 
-        print("other: ", other);        
+        return Vector3(x, y, z);  
 
-        difference = self.position - other; 
-        print("difference: ", difference);  
+    def look_at(self, other:Vector3, apply = False) -> Vector3:    
 
+        difference = other - self.position;   
+        direction:Vector3 = difference.normalized;  
 
-        direction:Vector3 = difference.normalized.to_unity;  
+        degree = math.degrees(math.atan2(direction.x, direction.z));    
 
-        print("dir: ", direction); 
-        degree = math.degrees(math.atan(direction.z / direction.x))  
-        
-        print("degree: ", degree, "\n") 
+        print("degree: ", degree, "dir: ", direction, "\n"); 
         
         if apply: self.rotation.y = degree; 
+        
         return Vector3(self.rotation.x, degree, self.rotation.z); 
-

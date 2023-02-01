@@ -101,3 +101,7 @@ class Vector3():
     def to_unity(self): 
         return Vector3(self.y, self.z, self.x)
         
+    
+    def to_list(self):
+        return [self.x, self.y, self.z]; 
+ 

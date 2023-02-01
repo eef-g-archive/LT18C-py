@@ -46,7 +46,7 @@ def mission07():
             motor.backward_cm(int(userInput[2:]))
         elif 'r' in userInput:
             if 'rot' in userInput:
-                motor.rotation_relative_angular(int(userInput[4:]))
+                motor.rotate_relative_angle(int(userInput[4:]))
             else:
                 motor.right_cm(int(userInput[2:]))
         elif 'l' in userInput:

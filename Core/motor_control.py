@@ -1,4 +1,5 @@
-from enum import Enum;
+from enum import Enum
+import math;
 from Core.Vectors import Vector3
 from Core.LT18C import DroneController 
 
@@ -8,22 +9,24 @@ class pathing(Enum):
     curved = 1
     triangle = 3
     square = 4
+    square_locked = 5; 
+
 
 
 class MotorController():
  
-    def log_movement(self, drone, change: Vector3):
+    def log_movement(self, controller, change: Vector3):
         self.log.debug(f"Movement function called | new Position: {str(change)}"); 
         self.log.info(f"Drone position prior to moving: {str(self.controller.transform.position)}"); 
     
-    def log_post_movement(self, drone, change: Vector3): 
+    def log_post_movement(self, controller, change: Vector3): 
         self.log.info(f"Drone moved successfully. Current Position: {str(self.controller.transform.position)}"); 
 
-    def log_rotation(self, drone, change: Vector3): 
+    def log_rotation(self, controller, change: Vector3): 
         self.log.debug(f"Rotational function called | new Rotation: {str(change)}"); 
         self.log.info(f"Drone rotation prior to moving: {str(self.controller.transform.rotation)}"); 
     
-    def log_post_rotation(self, drone, change: Vector3):
+    def log_post_rotation(self, controller, change: Vector3):
         self.log.info(f"Drone rotated successfully. Current Rotation: {str(self.controller.transform.rotation)}"); 
 
     def __init__(self, controller: DroneController):
@@ -77,6 +80,13 @@ class MotorController():
     def add_movement_callback(self, callback_func):
         self.movement_callback.append(callback_func); 
 
+    def add_rotation_invoke(self, invoke_func):
+        self.rotation_callback.append(invoke_func); 
+    
+    def add_rotation_callback(self, callback_func):
+        self.rotation_callback.append(callback_func); 
+        
+
     ########################################################################
     ###################     MOVEMENT FUNCTIONS    ##########################
     ########################################################################
@@ -86,7 +96,7 @@ class MotorController():
         print('rotating from', self.transform.rotation); 
 
         for invoke in self.rotation_invoke:
-            invoke(self.drone, rotation); 
+            invoke(self.controller, rotation); 
     
         if(rotation.y > 0):
             self.drone.rotate_clockwise(int(rotation.y)); 
@@ -96,90 +106,145 @@ class MotorController():
         self.controller.transform.rotation.y += rotation.y;          
 
         for callback in self.rotation_callback:
-            callback(self.drone, rotation); 
+            callback(self.controller, rotation); 
     
         print('rotating from', self.transform.rotation); 
-    
-    def rotation_relative_angular(self, degree: float):
+
+    def rotate_relative_angle(self, degree: float):
         self.rotate_relative(Vector3(0, degree, 0));  
 
-        
+    def rotate_absolute(self, rotation: Vector3): 
+        self.rotate_relative(rotation - self.transform.rotation); 
 
-    def move_absolute(self, position: Vector3, path:pathing = pathing.direct): 
+    def rotate_absolute_angle(self, angle: float): 
+        self.rotate_absolute(Vector3(0, angle, 0)); 
+     
+
+    def move_absolute(self, position: Vector3, path:pathing = pathing.direct):
+        
+        relative_rotation = (self.transform.look_at(position) - self.transform.rotation); 
+        distance = self.transform.position.distance(position);  
+
         match path:
-            case pathing.direct: 
-                distance = self.transform.position.distance(position); 
-                self.rotate_relative(self.transform.look_at(position)); 
+            case pathing.direct:  
+
+                self.rotate_absolute(self.transform.look_at(position)); 
                 self.forward_cm(distance);   
                 return; 
-            case pathing.triangle:
+
+            case pathing.triangle: 
+                first_turn_angle = 180 / 3;  
+
+            case pathing.square: 
+                first_turn_angle = 180 / 4;  
+                second_turn_angle = -first_turn_angle * 2;    
+
+                if path == pathing.square:
+                    distance = ((distance ** 2) / 2) ** .5; 
+
+                if(relative_rotation.y < 0):
+                    first_turn_angle *= -1; 
+                    second_turn_angle *= -1; 
+                
+                relative_rotation.y += first_turn_angle; 
+                self.rotate_relative(relative_rotation); 
+                self.forward_cm(distance); 
+                self.rotate_relative_angle(second_turn_angle); 
+                self.forward_cm(distance);  
                 return; 
-            case pathing.square:
+
+            case pathing.square_locked:
+                
+                def get_closest_to_right_angle(angle, base = 90):
+                    return base * round(angle/base)
+
+                self.rotate_absolute(self.transform.look_at(position)); 
+                angle = self.transform.rotation.y; 
+
+
+                adjust_angle = get_closest_to_right_angle(angle);  
+                
+                print("LOCKED ANGLE: ", adjust_angle);   
+                self.rotate_absolute(Vector3(0, adjust_angle, 0));  
+
+                print("new rotation(1): ", self.transform.rotation);  
+
+                difference = position - self.transform.position; 
+
+
+                #FIX
+                first_distance = abs(difference.y) 
+
+                if(adjust_angle == 90 or adjust_angle == 270):
+                    first_distance = abs(difference.x)
+
+                self.forward_cm(first_distance);  
+                #END FIX
+
+                second_rotation = self.transform.look_at(position) - self.transform.rotation; 
+                self.rotate_relative(second_rotation); 
+
+                print("new rotation(2): ", self.transform.rotation);  
+
+                second_distance = self.transform.position.distance(position); 
+                self.forward_cm(second_distance); 
+
                 return; 
             case _:
                 raise Exception("Given pathing does not exist!"); 
 
 
 
-    def move_relative(self, position: Vector3):
+    def move_relative(self, position: Vector3, speed = 50):
 
         print('moving from', self.transform.position); 
         print('current rotation', self.transform.rotation); 
 
         for invoke in self.movement_invoke:
-            invoke(self.drone, position); 
-    
-        speed = 50; 
+            invoke(self.controller, position);  
 
-        self.drone.go_xyz_speed(int(position.x), int(position.y), int(position.z), speed);  
+        self.drone.go_xyz_speed(int(position.z), int(position.x), int(position.y), speed);  
 
-        self.transform.position += self.transform.forward * position.x;     
-        self.transform.position += self.transform.right * position.y;       
-        self.transform.position += self.transform.up * position.z;     
+        self.transform.position += self.transform.forward * position.z;     
+        self.transform.position += self.transform.right * position.x;       
+        self.transform.position += self.transform.up * position.y;     
         
         print('moved to', self.transform.position); 
 
         for callback in self.movement_callback:
-            callback(self.drone, position); 
+            callback(self.controller, position); 
 
     def move_relative_cm(self, x, y, z = 0):  
         self.move_relative(Vector3(x, y, z)); 
 
     def forward_cm(self, cm):
-        self.move_relative_cm(cm, 0); 
+        self.move_relative_cm(0, 0, cm); 
     
     def backward_cm(self, cm): 
-        self.move_relative_cm(-cm, 0); 
+        self.move_relative_cm(0, 0, -cm); 
 
     def right_cm(self, cm): 
-        self.move_relative_cm(0, cm); 
+        self.move_relative_cm(cm, 0, 0); 
 
     def left_cm(self, cm): 
-        self.move_relative_cm(0, -cm);  
+        self.move_relative_cm(-cm, 0, 0);  
 
 
-    def return_home(self, direct=False):
+    def return_home(self, direct=False, path=pathing.direct):
+
         self.log.debug(f"return_home function called. | direct = {direct}"); 
 
         if (self.controller.get_battery() > self.controller.MIN_OPERATING_POWER):
-            self.log.info(f"Drone position prior to returning home : [{self.x}, {self.y}]")
-            if direct:
-                self.drone.go_xyz_speed(-self.x, self.y, 0, 10); 
-            else:
-                if (self.x < 0):
-                    self.forward_cm(-self.x); 
-                else:
-                    self.backward_cm(self.x); 
-                
-                if (self.y < 0):
-                    self.right_cm(-self.y); 
-                else:
-                    self.left_cm(self.y); 
+            self.log.info(f"Drone position prior to returning home : [{self.transform.position}]")
+            
+            self.move_absolute(Vector3(0, 0, 0), path);  
 
-            self.x = 0; 
-            self.y = 0; 
+            if self.transform.rotation.y != 0: 
+                self.rotate_absolute(Vector3(0, 0, 0));   
 
-            self.log.info(f"Drone returned home successfully. Current position: [{self.x}, {self.y}]"); 
+            print("Returned Home. Position: ", self.transform.position); 
+
+            self.log.info(f"Drone returned home successfully. Current position: [{self.transform.position}]"); 
         
         else: 
             self.log.warning(f"ERROR! Aborting command, drone battery less than {self.controller.MIN_OPERATING_POWER}%. Making emergency landing"); 

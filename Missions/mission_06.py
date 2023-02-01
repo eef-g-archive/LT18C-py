@@ -20,30 +20,61 @@ from djitellopy import Tello
 from Core.LT18C import DroneController
 from Core.LT18C_Dummy import DummyController
 from Core.Vectors import Vector3;
-from Core.motor_control import MotorController;
+from Core.motor_control import MotorController, pathing;
 
 
 #-------------------------------------------------------------------------------
 # Mission Programs
 #-------------------------------------------------------------------------------
 
+import turtle; 
+global t; 
+t = turtle.Turtle(); 
+t.left(90); 
+
+def after_move_turtle(controller, change):
+    t.goto(controller.transform.position.x, controller.transform.position.z); 
+
+def after_rotation_turtle(controller, change):
+    t.right(change.y); 
+    
+
 
 def mission06():
     my_drone = Tello(); 
     mission_params = [30, 180, "PT-Student", "Mission_06"]; 
-    drone= DummyController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
+    drone = DummyController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
+
+
+
+    motor.add_movement_callback(after_move_turtle); 
+    motor.add_rotation_callback(after_rotation_turtle); 
+    
+
 
     motor.takeoff()
 
     userInput = 'h'; 
-    distance_to_travel = 20; 
+    distance_to_travel = 10; 
 
     go_straight = False; 
 
-    while userInput != 'q':
+    while True:
+        
         print("~" * 15) 
-        if 'f' in userInput:
+        userInput = input()
+
+        
+
+        if userInput == 'exit':
+            print("Landing drone. . .")
+            motor.land()
+            break; 
+
+        elif 'home' in userInput:  
+            motor.return_home(go_straight, pathing.square_locked);  
+        elif 'f' in userInput:
             motor.forward_cm(distance_to_travel)
         elif 'b' in userInput:
             motor.backward_cm(distance_to_travel)
@@ -52,25 +83,16 @@ def mission06():
         elif 'l' in userInput:
             motor.left_cm(distance_to_travel)
         elif 'j' in userInput:
-            motor.move_absolute(Vector3(20, 20, 0)); 
-
-        elif 'home' in userInput: 
-            if go_straight:
-                motor.return_home(go_straight); 
-            else:
-                motor.return_home(); 
-        else:
-            
+            motor.move_absolute(Vector3(0, 0, 0), pathing.square_locked); 
+        elif 'e' in userInput:
+            motor.rotate_relative_angle(30); 
+        elif 'q' in userInput:
+            motor.rotate_relative_angle(-30); 
+        else: 
             print(motor.transform.forward); 
             print(motor.transform.right); 
             print(motor.transform.up); 
-        
-        userInput = input()
 
-        if userInput == 'q':
-            print("Landing drone. . .")
-            motor.land()
-            break
     drone.disconnect()
 
 
