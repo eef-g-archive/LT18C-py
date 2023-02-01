@@ -28,29 +28,29 @@ import Core.movement_record as Recorder;
 # Mission Programs
 #-------------------------------------------------------------------------------
 
-import turtle; 
-global t; 
-t = turtle.Turtle(); 
-t.left(90); 
+#import turtle; 
+#global t; 
+#t = turtle.Turtle(); 
+#t.left(90); 
 
-def after_move_turtle(controller, change):
-    t.goto(controller.transform.position.x, controller.transform.position.z); 
+#def after_move_turtle(controller, change):
+#    t.goto(controller.transform.position.x, controller.transform.position.z); 
 
-def after_rotation_turtle(controller, change):
-    t.right(change.y); 
+#def after_rotation_turtle(controller, change):
+#    t.right(change.y); 
     
 
 
 def mission06():
     my_drone = Tello(); 
     mission_params = [30, 180, "PT-Student", "Mission_06"]; 
-    drone = DummyController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
+    drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
     Recorder.instantiate(drone); 
 
 
-    motor.add_movement_callback(after_move_turtle); 
-    motor.add_rotation_callback(after_rotation_turtle); 
+    #motor.add_movement_callback(after_move_turtle); 
+    #motor.add_rotation_callback(after_rotation_turtle); 
     
     motor.add_movement_invoke(Recorder.record_movement); 
     motor.add_rotation_invoke(Recorder.record_rotation); 
@@ -59,7 +59,7 @@ def mission06():
     motor.takeoff()
 
     userInput = 'h'; 
-    distance_to_travel = 20; 
+    distance_to_travel = 40; 
 
     go_straight = False; 
 
@@ -74,6 +74,11 @@ def mission06():
             print("Landing drone. . .")
             motor.land()
             break; 
+
+        elif 'triangle' in userInput:
+            motor.move_absolute(Vector3(0, 0, 0), pathing.triangle); 
+        elif 'square' in userInput:
+            motor.move_absolute(Vector3(0, 0, 0), pathing.square); 
 
         elif 'home' in userInput:  
             motor.return_home(go_straight, pathing.square_locked);  
@@ -102,7 +107,7 @@ def mission06():
         elif 'l' in userInput:
             motor.left_cm(distance_to_travel)
         elif 'j' in userInput:
-            motor.move_absolute(Vector3(0, 0, 0), pathing.triangle); 
+            motor.move_absolute(Vector3(0, 0, 0), pathing.indirect); 
         elif 'e' in userInput:
             motor.rotate_relative_angle(30); 
         elif 'q' in userInput:
