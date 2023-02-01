@@ -289,31 +289,6 @@ class HeadsUpTello():
             self.log.debug(f"Drone moving down {cm}cm to {cm + currHeight}cm")
             self.drone.move_down(cm) 
             self.log.info(f"Drone moved down successfully. New height: {self.drone.get_barometer() - self.start_barometer}")
-
-
-    def fly_forward(self, cm):
-
-        self.log.debug(f"Drone moving forward {cm}cm to {cm + currPosition}cm ")
-
-
-
-
-
-
-    def fly_backward(self, cm):
-        
-
-    
-    def fly_right(self, cm):
-
-    
-
-    def fly_left(self, cm):
-
-
-    def fly_home(self):
-
-    currPosition = 
     
 
     

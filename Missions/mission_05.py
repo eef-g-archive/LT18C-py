@@ -14,8 +14,8 @@ import logging
 
 # Custom modules for the drones
 from djitellopy import Tello
-from headsupflight import HeadsUpTello
-
+from Core.LT18C import DroneController
+from Core.motor_control import MotorController
 #-------------------------------------------------------------------------------
 # Mission Programs
 #-------------------------------------------------------------------------------
@@ -24,26 +24,27 @@ from headsupflight import HeadsUpTello
 def mission04():
     my_drone = Tello()
     mission_params = [30, 180, "PT Student", "Mission 5"]
-    drone = HeadsUpTello(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
-    drone.takeoff()
+    drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
+    motor = MotorController(drone)
+    motor.takeoff()
 
     userInput = 'h'
     while userInput != 'q':
         print("~" * 15)
-        print(f"Current drone height: {drone.drone.get_barometer() - drone.start_barometer}")
+        print(f"Current drone height: {drone.get_barometer() - drone.start_barometer}")
         userInput = input("| Enter the number to go up or  down (negative for down): ")
         print("~" * 15)
         try:
             userInput = int(userInput)
             if(userInput > 0):
-                drone.up(userInput)
+                motor.up_cm(userInput)
             elif (userInput < 0):
                 userInput *= -1
-                drone.down(userInput)
+                motor.down_cm(userInput)
         except:
             if userInput == 'q':
                 print("Landing drone. . .")
-                drone.land()
+                motor.land()
                 break
     drone.disconnect()
 

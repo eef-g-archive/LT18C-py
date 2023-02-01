@@ -6,8 +6,8 @@ import logging
 
 # Custom modules for the drones
 from djitellopy import Tello
-from headsupflight import HeadsUpTello
-
+from Core.LT18C import DroneController
+from Core.motor_control import MotorController
 
 #-------------------------------------------------------------------------------
 # LED Matrix Display Pictures
@@ -40,7 +40,8 @@ def mission_01():
     # Connect to the DJI RoboMaster drone using a HeadsUpTello object
     # Try passing logging.INFO and see how your output changes
     my_robomaster = Tello()
-    drone = HeadsUpTello(my_robomaster, logging.WARNING)
+    drone = DroneController(my_robomaster, logging.WARNING)
+    motor = MotorController(drone)
 
     # Turn the top LED bright green and show our logo on the matrix display
     drone.matrix_pattern(huf_logo1, 'b')
@@ -72,24 +73,17 @@ def mission_01():
     return
 
 
-def mission3():
-    drone = Tello()
-    drone = HeadsUpTello(drone, logging.WARNING, floor=50, ceiling=150)
-    #print(drone.drone.query_height())
-    drone.takeoff()
-    #drone.fly_to_mission_ceiling()
-    time.sleep(2)
-    drone.land()
-    drone.disconnect()
+def run_mission():
+    try:
+        mission_01()
+        print(f"Mission completed")
+    except Exception as excp:
+        print(excp)
+        print(f"Mission aborted")
 
 #-------------------------------------------------------------------------------
 # Python Entry Point
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    try:
-        mission3()
-        print(f"Mission completed")
-    except Exception as excp:
-        print(excp)
-        print(f"Mission aborted")
+    run_mission()
