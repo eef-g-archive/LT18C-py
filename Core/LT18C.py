@@ -20,7 +20,7 @@ class DroneController():
 
     def __init__(self, drone_baseobject:Tello, debug_level=logging.INFO,
                  floor=0, ceiling=0, drone_name="DroneyMcDroneFace",
-                mission_name="Maiden Voyage"):
+                mission_name="Maiden Voyage", min_takeoff=15, min_operating=10):
         """
         Constuctor that establishes a connection with the drone. Pass in a new
         djitellopy Tello object give your HeadsUpTello object its wings.
@@ -46,8 +46,8 @@ class DroneController():
 
         self.transform = Transform();  
 
-        self.MIN_TAKEOFF_POWER = 15
-        self.MIN_OPERATING_POWER = 10
+        self.MIN_TAKEOFF_POWER = min_takeoff
+        self.MIN_OPERATING_POWER = min_operating
 
 
         now = datetime.now().strftime("%Y%m%d.%H"); 

@@ -19,6 +19,9 @@ if __name__ == "__main__":
         case 6:
             from Missions.mission_06 import run_mission;
             curr_mission = run_mission()
+        case 7:
+            from Missions.mission_07 import run_mission
+            curr_mission = run_mission()
         case _:
             print(f"ERROR: Mission {mission_choice} does not exist!\nEnding program")
     
