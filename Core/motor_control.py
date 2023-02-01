@@ -19,6 +19,13 @@ class pathing(Enum):
 
 class MotorController():
  
+
+    def battery_check(self, controller, change: Vector3):
+        if (self.controller.get_battery() < self.controller.MIN_OPERATING_POWER):
+            self.log.warning(f"*** EMERGENCY LANDING -- BATTERY TOO LOW TO MOVE***")
+            self.land()
+            raise Exception(f"Minimum Movement Battery Level Error")
+
     def log_movement(self, controller, change: Vector3):
         self.log.debug(f"Movement function called | new Position: {str(change)}"); 
         self.log.info(f"Drone position prior to moving: {str(self.controller.transform.position)}"); 
@@ -36,7 +43,7 @@ class MotorController():
     def __init__(self, controller: DroneController):
         self.controller:DroneController = controller;    
 
-        self.movement_invoke = [self.log_movement]; 
+        self.movement_invoke = [self.log_movement, self.battery_check]; 
         self.movement_callback = [self.log_post_movement]; 
     
         self.rotation_invoke = [self.log_rotation]; 

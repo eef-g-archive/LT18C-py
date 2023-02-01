@@ -16,10 +16,14 @@ import logging
 from djitellopy import Tello
 from Core.LT18C import DroneController
 from Core.LT18C_Dummy import DummyController
-from Core.motor_control import MotorController
+from Core.Vectors import Vector3
+from Core.motor_control import MotorController, pathing
+
 #-------------------------------------------------------------------------------
 # Mission Programs
 #-------------------------------------------------------------------------------
+
+
 
 
 def mission07():
@@ -30,7 +34,7 @@ def mission07():
     # Starting w/ this mission we're going to be using the libraries we made
     # These split the old HeadsUpTello into 2 main parts:
     # The Drone Controller for logic & the Motor Controller for movement
-    drone = DummyController(my_drone, logging.WARNING,
+    drone = DroneController(my_drone, logging.WARNING,
      floor=mission_params[0], ceiling=mission_params[1],
      drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone)
@@ -53,9 +57,9 @@ def mission07():
             motor.left_cm(int(userInput[2:]))
         elif 'home' in userInput:
             if 's' in userInput:
-                motor.return_home(True)
+                motor.move_absolute(Vector3(0, 0, 0), pathing.direct)
             else:
-                motor.return_home()
+                motor.move_absolute(Vector3(0, 0, 0), pathing.indirect)
         else:
             print(motor.transform.position)
 
