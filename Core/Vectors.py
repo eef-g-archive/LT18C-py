@@ -101,6 +101,12 @@ class Vector3():
     def to_unity(self): 
         return Vector3(self.y, self.z, self.x)
         
+    def is_directional(self):
+        zero_count = 0; 
+        if self.x == 0: zero_count += 1; 
+        if self.y == 0: zero_count += 1; 
+        if self.z == 0: zero_count += 1; 
+        return zero_count >= 2; 
     
     def to_list(self):
         return [self.x, self.y, self.z]; 

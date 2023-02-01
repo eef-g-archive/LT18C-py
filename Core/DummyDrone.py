@@ -26,3 +26,15 @@ class DummyDrone():
 
     def takeoff(self):
         pass; 
+
+    def move_forward(self, *args):
+        pass;  
+
+    def move_back(self, *args):
+        pass; 
+
+    def move_left(self, *args):
+        pass; 
+
+    def move_right(self, *args):
+        pass; 

@@ -1,8 +1,13 @@
 from Missions.mission_06 import run_mission
 if __name__ == "__main__":
-    curr_mission = -1
-    mission_choice = int(input("Enter the current mission number: "))
+    #curr_mission = -1
+    #mission_choice = int(input("Enter the current mission number: "))
 
+    from Missions.mission_06 import run_mission;
+    curr_mission = run_mission;
+    curr_mission();  
+    exit(); 
+    
     match mission_choice:
         case 1:
             from Missions.mission_01 import run_mission;

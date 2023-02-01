@@ -22,35 +22,38 @@ from Core.LT18C_Dummy import DummyController
 from Core.Vectors import Vector3;
 from Core.motor_control import MotorController, pathing;
 
+import Core.movement_record as Recorder;
 
 #-------------------------------------------------------------------------------
 # Mission Programs
 #-------------------------------------------------------------------------------
 
-#import turtle; 
-#global t; 
-#t = turtle.Turtle(); 
-#t.left(90); 
+import turtle; 
+global t; 
+t = turtle.Turtle(); 
+t.left(90); 
 
-#def after_move_turtle(controller, change):
-    #t.goto(controller.transform.position.x, controller.transform.position.z); 
+def after_move_turtle(controller, change):
+    t.goto(controller.transform.position.x, controller.transform.position.z); 
 
-#def after_rotation_turtle(controller, change):
-    #t.right(change.y); 
+def after_rotation_turtle(controller, change):
+    t.right(change.y); 
     
 
 
 def mission06():
     my_drone = Tello(); 
     mission_params = [30, 180, "PT-Student", "Mission_06"]; 
-    drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
+    drone = DummyController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
+    Recorder.instantiate(drone); 
 
 
-
-    #motor.add_movement_callback(after_move_turtle); 
-    #motor.add_rotation_callback(after_rotation_turtle); 
+    motor.add_movement_callback(after_move_turtle); 
+    motor.add_rotation_callback(after_rotation_turtle); 
     
+    motor.add_movement_invoke(Recorder.record_movement); 
+    motor.add_rotation_invoke(Recorder.record_rotation); 
 
 
     motor.takeoff()
@@ -74,8 +77,22 @@ def mission06():
 
         elif 'home' in userInput:  
             motor.return_home(go_straight, pathing.square_locked);  
-        elif 'ff' in userInput: 
-            motor.drone.move_forward(distance_to_travel); 
+        
+        elif 'back track coordinates' in userInput:
+            li = [item for item in Recorder.Record.get_coordinate_records()]; 
+            while len(li) > 0:
+                curr_coord = li.pop(); 
+                motor.move_absolute(curr_coord, pathing.direct);  
+
+        elif 'back track' in userInput:
+            li = [(item[0], -item[1]) for item in Recorder.Record.get_list()]; 
+            #print(li.count, " and ", li); 
+            while len(li) > 0:
+                command, value = li.pop();   
+                if command == Recorder.Type.Move:
+                    motor.move_relative(value); 
+                else:
+                    motor.rotate_relative(value);  
         elif 'f' in userInput:
             motor.forward_cm(distance_to_travel)
         elif 'b' in userInput:
@@ -90,6 +107,8 @@ def mission06():
             motor.rotate_relative_angle(30); 
         elif 'q' in userInput:
             motor.rotate_relative_angle(-30); 
+        elif 'p' in userInput:
+            Recorder.print_record(); 
         else: 
             print(motor.transform.forward); 
             print(motor.transform.right); 

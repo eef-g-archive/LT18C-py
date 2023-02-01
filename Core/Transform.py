@@ -1,5 +1,4 @@
-import math
-import numpy as np; 
+import math 
 from Core.Vectors import Vector3 
 
 class Transform():
@@ -18,24 +17,17 @@ class Transform():
         return math.radians(self.rotation.z); 
 
     @property
-    def forward(self): 
-
-        print("\nforward called:"); 
-
+    def forward(self):  
         x =  math.cos(self.pitch) * math.sin(self.yaw); 
         y = -math.sin(self.pitch); 
-        z =  math.cos(self.pitch) * math.cos(self.yaw); 
-
-        print("    ", x, y, z); 
-        return Vector3(x, y, z); 
-        
+        z =  math.cos(self.pitch) * math.cos(self.yaw);  
+        return Vector3(x, y, z);  
     @property
     def right(self):   
         x =  math.cos(self.yaw); 
         y =  0; 
         z = -math.sin(self.yaw); 
         return Vector3(x, y, z); 
-
     @property
     def up(self):  
         x = math.sin(self.pitch) * math.sin(self.yaw); 
@@ -44,15 +36,13 @@ class Transform():
 
         return Vector3(x, y, z);  
 
-    def look_at(self, other:Vector3, apply = False) -> Vector3:    
+    def look_at(self, other:Vector3) -> Vector3:    
 
         difference = other - self.position;   
         direction:Vector3 = difference.normalized;  
 
         degree = math.degrees(math.atan2(direction.x, direction.z));    
 
-        print("degree: ", degree, "dir: ", direction, "\n"); 
-        
-        if apply: self.rotation.y = degree; 
+        print("degree: ", degree, "dir: ", direction, "\n");  
         
         return Vector3(self.rotation.x, degree, self.rotation.z); 
