@@ -1,7 +1,7 @@
 from enum import Enum
 import math;
-from Core.Vectors import Vector3
-from Core.LT18C import DroneController 
+from Modules.Core.Vectors import Vector3
+from Modules.Core.LT18C import DroneController 
 
 
 class pathing(Enum):
@@ -48,6 +48,8 @@ class MotorController():
     
         self.rotation_invoke = [self.log_rotation]; 
         self.rotation_callback = [self.log_post_rotation];  
+
+        self.controller.motor_controller = self; 
 
     @property
     def log(self):
@@ -263,31 +265,31 @@ class MotorController():
         for invoke in self.movement_invoke:
             invoke(self.controller, position);  
 
-        x = int(round(position.z)); 
-        y = int(round(position.x)); 
-        z = int(round(position.y)); 
+        print("move command: ", position); 
+        
+        self.transform.position += self.transform.forward * position.z;     
+        self.transform.position += self.transform.right * position.x;       
+        self.transform.position += self.transform.up * position.y;    
 
-        print("move command: ", x, y, z); 
+        drone_x = int(round(position.z)); 
+        drone_y = int(round(position.x)); 
+        drone_z = int(round(position.y)); 
+
 
         #if((abs(x) < 20 and x != 0) or (abs(y) < 20 and y != 0) or (abs(z) < 20 and z != 0)):
         #    print("value less than 20 found, skipping"); 
         #    return; 
 
 
-        if x > 0:
-            self.drone.move_forward(x); 
-        elif x < 0:
-            self.drone.move_back(abs(x)); 
+        if drone_x > 0:
+            self.drone.move_forward(drone_x); 
+        elif drone_x < 0:
+            self.drone.move_back(abs(drone_x)); 
 
-        if y > 0:
-            self.drone.move_right(y); 
-        elif y < 0:
-            self.drone.move_left(abs(y)); 
-
-        
-        self.transform.position += self.transform.forward * position.z;     
-        self.transform.position += self.transform.right * position.x;       
-        self.transform.position += self.transform.up * position.y;     
+        if drone_y > 0:
+            self.drone.move_right(drone_y); 
+        elif drone_y < 0:
+            self.drone.move_left(abs(drone_y));  
         
         print('moved to', self.transform.position); 
 

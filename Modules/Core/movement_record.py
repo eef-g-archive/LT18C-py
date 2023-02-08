@@ -1,6 +1,6 @@
 from enum import Enum
-from Core.LT18C import DroneController
-from Core.Vectors import Vector3
+from Modules.Core.LT18C import DroneController
+from Modules.Core.Vectors import Vector3
 
 MAX_STORAGE_SIZE = 1024; 
 
@@ -55,6 +55,9 @@ def record_rotation(controller, newRotation):
 
 def instantiate(controller):
     Record.instantiate(controller); 
+    
+    controller.motor_controller.add_movement_invoke(record_movement); 
+    controller.motor_controller.add_rotation_invoke(record_rotation); 
 
 def print_record():
     for item in Record.get_list():

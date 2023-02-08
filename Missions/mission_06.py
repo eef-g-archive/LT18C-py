@@ -16,13 +16,14 @@ import time
 import logging
 
 # Custom modules for the drones
-from djitellopy import Tello 
-from Core.LT18C import DroneController
-from Core.LT18C_Dummy import DummyController
-from Core.Vectors import Vector3;
-from Core.motor_control import MotorController, pathing;
+from djitellopy import Tello
+from Modules.Addons.MicroAdjust import Adjuster 
+from Modules.Core.LT18C import DroneController
+from Modules.Core.LT18C_Dummy import DummyController
+from Modules.Core.Vectors import Vector3;
+from Modules.Core.motor_control import MotorController, pathing;
 
-import Core.movement_record as Recorder;
+import Modules.Core.movement_record as Recorder;
 
 #-------------------------------------------------------------------------------
 # Mission Programs
@@ -47,13 +48,12 @@ def mission06():
     drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
     Recorder.instantiate(drone); 
+    adjuster = Adjuster(drone); 
 
 
     #motor.add_movement_callback(after_move_turtle); 
     #motor.add_rotation_callback(after_rotation_turtle); 
     
-    motor.add_movement_invoke(Recorder.record_movement); 
-    motor.add_rotation_invoke(Recorder.record_rotation); 
 
 
     motor.takeoff()

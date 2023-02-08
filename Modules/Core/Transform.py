@@ -1,5 +1,5 @@
 import math 
-from Core.Vectors import Vector3 
+from Modules.Core.Vectors import Vector3 
 
 class Transform():
     def __init__(self):
