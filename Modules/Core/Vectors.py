@@ -53,18 +53,23 @@ class Vector3():
         else:
             raise Exception("An object type of Vector3 cannot be divided with the type of " + str(__o.type));   
         return Vector3(x, y, z);  
-    def __eq__(self, __o: object) -> bool:
+    
+    def __eq__(self, __o: object) -> bool: 
         if(self.x != __o.x or
             self.y != __o.y or
             self.z != __o.z): 
             return False; 
-        return True; 
-    def __ne__(self, __o: object) -> bool:
+        return True;  
+
+    def __ne__(self, __o: object) -> bool:  
+        if(__o == None):
+            return self == __o; 
         if(self.x == __o.x or
             self.y == __o.y or
             self.z == __o.z): 
             return False; 
         return True;  
+ 
     def __neg__(self):
         return Vector3(-self.x, -self.y, -self.z); 
     def __iadd__(self, __o):
@@ -78,9 +83,13 @@ class Vector3():
     def __pow__(self, __o):
         return Vector3(self.x ** __o, self.y ** __o, self.z ** __o); 
     def __abs__(self):
-        return Vector3(abs(self.x), abs(self.y), abs(self.y)); 
+        return Vector3(abs(self.x), abs(self.y), abs(self.z)); 
     def __str__(self):
-        return "Vector3(" + str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ")"; 
+        return "(" + str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ")"; 
+    def __int__(self):
+        return Vector3(int(self.x), int(self.y), int(self.z)); 
+    def __round__(self):
+        return Vector3(round(self.x), round(self.y), round(self.z)); 
 
     def distance(self, other):
         return Vector3.Distance(self, other); 

@@ -16,45 +16,65 @@ class pathing(Enum):
 
 
 
+########################################################################
+################### INVOKE/CALLBACK FUNCTIONS ##########################
+########################################################################
+   
 
-class MotorController():
- 
 
-    def battery_check(self, controller, change: Vector3):
-        if (self.controller.get_battery() < self.controller.MIN_OPERATING_POWER):
-            self.log.warning(f"*** EMERGENCY LANDING -- BATTERY TOO LOW TO MOVE***")
-            self.land()
-            raise Exception(f"Minimum Movement Battery Level Error")
+def battery_check(controller, change: Vector3):
+    if (controller.get_battery() < controller.MIN_OPERATING_POWER):
+        controller.log.warning(f"*** EMERGENCY LANDING -- BATTERY TOO LOW TO MOVE***")
+        controller.land()
+        raise Exception(f"Minimum Movement Battery Level Error") 
 
-    def log_movement(self, controller, change: Vector3):
-        self.log.debug(f"Movement function called | new Position: {str(change)}"); 
-        self.log.info(f"Drone position prior to moving: {str(self.controller.transform.position)}"); 
+def log_movement(controller, change: Vector3):
+    controller.log.debug(f"Movement function called | new Position: {str(change)}"); 
+    controller.log.info(f"Drone position prior to moving: {str(controller.transform.position)}"); 
+
+def log_post_movement(controller, change: Vector3): 
+    controller.log.info(f"Drone moved successfully. Current Position: {str(controller.transform.position)}"); 
+
+def log_rotation(controller, change: Vector3): 
+    controller.log.debug(f"Rotational function called | new Rotation: {str(change)}"); 
+    controller.log.info(f"Drone rotation prior to moving: {str(controller.transform.rotation)}"); 
+
+def log_post_rotation(controller, change: Vector3):
+    controller.log.info(f"Drone rotated successfully. Current Rotation: {str(controller.transform.rotation)}"); 
+
     
-    def log_post_movement(self, controller, change: Vector3): 
-        self.log.info(f"Drone moved successfully. Current Position: {str(self.controller.transform.position)}"); 
 
-    def log_rotation(self, controller, change: Vector3): 
-        self.log.debug(f"Rotational function called | new Rotation: {str(change)}"); 
-        self.log.info(f"Drone rotation prior to moving: {str(self.controller.transform.rotation)}"); 
-    
-    def log_post_rotation(self, controller, change: Vector3):
-        self.log.info(f"Drone rotated successfully. Current Rotation: {str(self.controller.transform.rotation)}"); 
+class MotorController(): 
 
     def __init__(self, controller: DroneController):
         self.controller:DroneController = controller;   
-        self.tether_distance = 500; 
+        self.tether_distance = 5000; 
 
-        self.movement_invoke = [self.log_movement, self.battery_check]; 
-        self.movement_callback = [self.log_post_movement]; 
+        self.movement_invoke = [log_movement, battery_check]; 
+        self.movement_callback = [log_post_movement]; 
     
-        self.rotation_invoke = [self.log_rotation]; 
-        self.rotation_callback = [self.log_post_rotation];  
+        self.rotation_invoke = [log_rotation]; 
+        self.rotation_callback = [log_post_rotation];  
 
-        self.controller.motor_controller = self; 
+        self.controller.motor_controller = self;  
+
+    def add_movement_invoke(self, invoke_func):
+        self.movement_invoke.append(invoke_func); 
+
+    def add_movement_callback(self, callback_func):
+        self.movement_callback.append(callback_func); 
+
+    def add_rotation_invoke(self, invoke_func):
+        self.rotation_callback.append(invoke_func); 
+
+    def add_rotation_callback(self, callback_func):
+        self.rotation_callback.append(callback_func);  
+
 
     @property
-    def log(self):
+    def log(self): 
         return self.controller.log; 
+
     @property
     def transform(self):
         return self.controller.transform; 
@@ -64,50 +84,25 @@ class MotorController():
         return self.controller.drone; 
 
     @property
-    def x(self):
-        return self.controller.transform.position.x;  
+    def position(self):
+        return self.transform.position; 
     @property
-    def y(self):
-        return self.controller.transform.position.y; 
-    @property
-    def z(self):
-        return self.controller.transform.position.z; 
-
-    @x.setter
-    def x(self, new_value:float):
-        self.controller.transform.position.x = new_value; 
-    @y.setter
-    def y(self, new_value:float):
-        self.controller.transform.position.y = new_value; 
-    @z.setter
-    def z(self, new_value:float):
-        self.controller.transform.position.z = new_value; 
-    
-
-    ########################################################################
-    ################### INVOKE/CALLBACK FUNCTIONS ##########################
-    ########################################################################
-
-    def add_movement_invoke(self, invoke_func):
-        self.movement_invoke.append(invoke_func); 
-    
-    def add_movement_callback(self, callback_func):
-        self.movement_callback.append(callback_func); 
-
-    def add_rotation_invoke(self, invoke_func):
-        self.rotation_callback.append(invoke_func); 
-    
-    def add_rotation_callback(self, callback_func):
-        self.rotation_callback.append(callback_func); 
+    def rotation(self):
+        return self.transform.rotation; 
         
+    @position.setter
+    def position(self, new_position: Vector3):
+        self.transform.position = new_position; 
+
+    @rotation.setter
+    def rotation(self, new_rotation: Vector3):
+        self.transform.rotation = new_rotation;     
 
     ########################################################################
     ###################     MOVEMENT FUNCTIONS    ##########################
     ########################################################################
  
-    def rotate_relative(self, rotation: Vector3): 
-        
-        print('rotating from', self.transform.rotation); 
+    def rotate_relative(self, rotation: Vector3):  
 
         for invoke in self.rotation_invoke:
             invoke(self.controller, rotation); 
@@ -116,15 +111,12 @@ class MotorController():
             self.drone.rotate_clockwise(abs(int(round(rotation.y)))); 
         elif(rotation.y < 0):
             self.drone.rotate_counter_clockwise(abs(int(round(rotation.y)))); 
-        else:
-            pass; 
+        else: pass; 
 
         self.controller.transform.rotation.y += rotation.y;          
 
         for callback in self.rotation_callback:
-            callback(self.controller, rotation); 
-    
-        print('rotating from', self.transform.rotation); 
+            callback(self.controller, rotation);  
 
     def rotate_relative_angle(self, degree: float):
         self.rotate_relative(Vector3(0, degree, 0));  
@@ -139,26 +131,21 @@ class MotorController():
 
     def move_absolute(self, position: Vector3, path:pathing = pathing.direct):
         
-        position = self.calculate_tether_distance(position); 
+        #position = self.calculate_tether_distance(position); 
 
         absolute_rotation = self.transform.look_at(position); 
         relative_rotation = (absolute_rotation - self.transform.rotation); 
         distance = self.transform.position.distance(position);  
 
-        match path: 
-
+        match path:  
             case pathing.direct:  
-                
                 self.rotate_absolute(self.transform.look_at(position)); 
-
                 self.forward_cm(distance);   
                 return; 
 
             case pathing.triangle: 
                 first_turn_angle = 180 / 3;    
-                second_turn_angle = -first_turn_angle * 2;     
- 
-
+                second_turn_angle = -first_turn_angle * 2; 
                 if(relative_rotation.y < 0):
                     first_turn_angle *= -1; 
                     second_turn_angle *= -1; 
@@ -193,150 +180,136 @@ class MotorController():
                 self.forward_cm(distance);  
                 return; 
 
-            case pathing.square_locked:
-                
+            case pathing.square_locked: 
                 def get_closest_to_right_angle(angle, base = 90):
                     return base * round(angle/base)
 
                 self.rotate_absolute(self.transform.look_at(position)); 
-                angle = self.transform.rotation.y; 
+                angle = self.rotation.y;  
 
-
-                adjust_angle = get_closest_to_right_angle(angle);  
-                
-                print("LOCKED ANGLE: ", adjust_angle);   
-                self.rotate_absolute(Vector3(0, adjust_angle, 0));  
-
-                print("new rotation(1): ", self.transform.rotation);  
+                adjust_angle = get_closest_to_right_angle(angle);   
+                self.rotate_absolute(Vector3(0, adjust_angle, 0));   
 
                 difference = position - self.transform.position; 
-
-
-                #FIX
                 first_distance = abs(difference.z) 
 
                 if(abs(adjust_angle) == 90 or abs(adjust_angle) == 270):
-                    first_distance = abs(difference.x)
+                    first_distance = abs(difference.x); 
 
-                self.forward_cm(first_distance);  
-                #END FIX
-
-                second_rotation = self.transform.look_at(position) - self.transform.rotation; 
-                self.rotate_relative(second_rotation); 
-
-                print("new rotation(2): ", self.transform.rotation);  
-
-                second_distance = self.transform.position.distance(position); 
+                self.forward_cm(first_distance);    
+                second_rotation = self.transform.look_at(position) - self.rotation; 
+                self.rotate_relative(second_rotation);   
+                second_distance = self.position.distance(position); 
                 self.forward_cm(second_distance); 
 
                 return; 
             case pathing.indirect:  
-
+                #position = self.calculate_tether_distance(position); 
                 first_distance = distance * math.cos(math.radians(relative_rotation.y)); 
-
-                #self.move_relative(dir * first_distance); 
-                go_back = (-self.transform.forward * first_distance + self.transform.position).distance(position); 
-                go_forw = (self.transform.forward * first_distance + self.transform.position).distance(position); 
-                if(go_back < go_forw):
-                    self.backward_cm(first_distance); 
-                else:
-                    self.forward_cm(first_distance); 
+                go_back = (-self.transform.forward * first_distance + self.position).distance(position); 
+                go_forw = (self.transform.forward * first_distance + self.position).distance(position); 
+                
+                if(go_back < go_forw): self.backward_cm(first_distance); 
+                else: self.forward_cm(first_distance); 
 
                 second_distance = self.transform.position.distance(position); 
-
-                go_r = (-self.transform.right * second_distance + self.transform.position).distance(position); 
-                go_l = (self.transform.right * second_distance + self.transform.position).distance(position); 
+                go_r = (-self.transform.right * second_distance + self.position).distance(position); 
+                go_l = (self.transform.right * second_distance + self.position).distance(position); 
                 
-                if(go_r < go_l): 
-                    self.left_cm(second_distance); 
-                else:
-                    self.right_cm(second_distance); 
-                
-
+                if(go_r < go_l): self.left_cm(second_distance); 
+                else: self.right_cm(second_distance);   
                 return; 
             case _:
                 raise Exception("Given pathing does not exist!"); 
 
-    def calculate_tether_distance(self, movement):
-
-        distance = movement.magnitude; 
-        direction = movement.normalized; 
-
-        full_dist_from_origin = (movement + self.transform.position).magnitude;  
-
-        movementThreshold = 21;  
-
-        print("full_dist_from_origin", full_dist_from_origin); 
-        if(full_dist_from_origin > self.tether_distance):
-            
-            if(self.transform.position.magnitude <= movementThreshold):
-                distance = self.tether_distance; 
-            
+    def calculate_tether_distance(self, distance, direction, movementThreshold = 21): 
+        if direction.x != 0: full_dist_from_origin = (self.transform.right * distance + self.position).magnitude; 
+        elif direction.y != 0: full_dist_from_origin = (self.transform.up * distance + self.position).magnitude; 
+        elif direction.z != 0: full_dist_from_origin = (self.transform.forward * distance + self.position).magnitude; 
+        else: Vector3.Zero();  
+        if(full_dist_from_origin > self.tether_distance):    
+            if(self.position.magnitude <= movementThreshold):
+                distance = self.tether_distance;   
             else:
                 #then this guy is going over the tether line;
-                rel_dist = self.transform.position.magnitude; #this is the C
-                d_angle = (self.transform.look_at(Vector3(0,0,0)) - self.transform.rotation).y; 
+                rel_dist = self.position.magnitude; #this is the C
+                d_angle = (self.transform.look_at(Vector3(0,0,0)) - self.rotation).y; 
                 c_angle_rad = (math.sin(math.radians(d_angle)) * rel_dist)/self.tether_distance; 
                 v_angle = 180 - math.degrees(c_angle_rad) - d_angle;  
                 v_distance = (rel_dist * math.sin(math.radians(v_angle)))/math.sin(c_angle_rad); 
-                distance = v_distance; 
-
+                distance = v_distance;    
+        print(distance); 
         return direction * distance; 
 
-    def move_relative(self, position: Vector3, speed = 50):
+    def handle_movement_limitation(self, movement: Vector3): 
+        def sign(value):
+            return value / abs(value);  
+        def in_bounds(value) -> int:
+            if(value < 20): return -1; 
+            if(value > 500): return 1; 
+            return 0;   
+        movement_absolute = abs(movement);    
+        next_movement = Vector3.Zero(); 
+        new_movement = movement; 
 
-        print('moving from', self.transform.position); 
-        print('current rotation', self.transform.rotation); 
+        x_bound, y_bound, z_bound = (in_bounds(movement_absolute.x), in_bounds(movement_absolute.y), in_bounds(movement_absolute.z)); 
+        print(x_bound, y_bound, z_bound); 
+
+
+        if x_bound == 1:
+            next_movement.x = movement.x - sign(movement.x) * 500; 
+            new_movement.x = 500 * sign(movement.x); 
+        if y_bound == 1:
+            next_movement.y = movement.y - sign(movement.y) * 500; 
+            new_movement.y = 500 * sign(movement.y); 
+        if z_bound == 1:
+            next_movement.z = movement.z - sign(movement.z) * 500; 
+            new_movement.z = 500 * sign(movement.z); 
+            
+        if x_bound == -1: 
+            new_movement.x = 0; 
+        if y_bound == -1: 
+            new_movement.y = 0; 
+        if z_bound == -1: 
+            new_movement.z = 0; 
+
+        if next_movement.magnitude < 20: #this is threshhold
+            next_movement = None; 
+
+        return new_movement, next_movement; 
+
+
+    def move_relative(self, movement: Vector3, speed = 50):
+        previous_position = self.position;  
+        movement = self.calculate_tether_distance(movement.magnitude, movement.normalized); 
+        movement, next_movement = self.handle_movement_limitation(movement); 
 
         for invoke in self.movement_invoke:
-            invoke(self.controller, position);  
-
-        print("move command: ", position); 
-
-        position = self.calculate_tether_distance(position); 
+            invoke(self.controller, movement);   
         
-        self.transform.position += self.transform.forward * position.z;     
-        self.transform.position += self.transform.right * position.x;       
-        self.transform.position += self.transform.up * position.y;    
+        self.transform.position += self.transform.forward * movement.z;     
+        self.transform.position += self.transform.right * movement.x;       
+        self.transform.position += self.transform.up * movement.y;    
 
-        drone_x = int(round(position.z)); 
-        drone_y = int(round(position.x)); 
-        drone_z = int(round(position.y)); 
+        drone_x = int(round(movement.z)); 
+        drone_y = int(round(movement.x)); 
+        drone_z = int(round(movement.y));  
 
+        if drone_x > 0: self.drone.move_forward(drone_x); 
+        elif drone_x < 0: self.drone.move_back(abs(drone_x)); 
 
-        #if((abs(x) < 20 and x != 0) or (abs(y) < 20 and y != 0) or (abs(z) < 20 and z != 0)):
-        #    print("value less than 20 found, skipping"); 
-        #    return; 
-
-        def clamp(value, min = 20, max = 500):
-            ret = value; 
-            if(value < min):
-                ret = min;  
-                return min; 
-            elif(value > max):
-                ret =  max; 
-                return max; 
-            return value; 
-            ret = value; 
-            if(ret > 50):
-                ret -= int(math.sqrt(ret)); 
-
-            return ret;  
-
-        if drone_x > 0:
-            self.drone.move_forward(clamp(drone_x)); 
-        elif drone_x < 0:
-            self.drone.move_back(clamp(abs(drone_x))); 
-
-        if drone_y > 0:
-            self.drone.move_right(clamp(drone_y)); 
-        elif drone_y < 0:
-            self.drone.move_left(clamp(abs(drone_y)));  
+        if drone_y > 0: self.drone.move_right(drone_y); 
+        elif drone_y < 0: self.drone.move_left(abs(drone_y));  
         
-        print('moved to', self.transform.position); 
+        print('Moved from', previous_position, "to", self.position); 
 
         for callback in self.movement_callback:
-            callback(self.controller, position); 
+            callback(self.controller, movement); 
+
+        if next_movement is not None:
+            print("     The scope of the movement was greater than 500cm."); 
+            print("     Moving in smaller increment of", movement); 
+            self.move_relative(next_movement, speed);  
 
     def move_relative_cm(self, x, y, z = 0):  
         self.move_relative(Vector3(x, y, z)); 
@@ -358,16 +331,15 @@ class MotorController():
  
 
         if (self.controller.get_battery() > self.controller.MIN_OPERATING_POWER):
-            self.log.info(f"Drone position prior to returning home : [{self.transform.position}]")
+            self.log.info(f"Drone position prior to returning home : [{self.position}]")
             
-            self.move_absolute(Vector3(0, 0, 0), path);  
+            self.move_absolute(Vector3.Zero(), path);  
 
             if self.transform.rotation.y != 0: 
-                self.rotate_absolute(Vector3(0, 0, 0));   
+                self.rotate_absolute(Vector3.Zero());   
 
             print("Returned Home. Position: ", self.transform.position); 
-
-            self.log.info(f"Drone returned home successfully. Current position: [{self.transform.position}]"); 
+            self.log.info(f"Drone returned home successfully. Current position: [{self.position}]"); 
         
         else: 
             self.log.warning(f"ERROR! Aborting command, drone battery less than {self.controller.MIN_OPERATING_POWER}%. Making emergency landing"); 

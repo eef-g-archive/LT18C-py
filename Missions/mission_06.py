@@ -93,10 +93,10 @@ def mission06():
             motor.move_absolute(Vector3(0, 0, 0), pathing.square); 
 
         elif 'homedir' in userInput:  
-            motor.return_home(pathing.direct);  
+            motor.return_home(Vector3.Zero(), pathing.direct);  
         
-        elif 'homeindir' in userInput:  
-            motor.return_home( pathing.indirect);  
+        elif 'homeind' in userInput:  
+            motor.move_absolute(Vector3.Zero(), pathing.indirect);  
         
         elif 'home' in userInput:
             motor.return_home(pathing.square_locked); 
