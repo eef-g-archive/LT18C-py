@@ -1,4 +1,3 @@
-from Missions.mission_06 import run_mission
 if __name__ == "__main__":
     curr_mission = -1
     mission_choice = int(input("Enter the current mission number: "))
@@ -28,6 +27,9 @@ if __name__ == "__main__":
             curr_mission = run_mission()
         case 12:
             from Missions.mission_12 import run_mission
+            curr_mission = run_mission()
+        case 13:
+            from Missions.mission_13 import run_mission
             curr_mission = run_mission()
         case _:
             print(f"ERROR: Mission {mission_choice} does not exist!\nEnding program")

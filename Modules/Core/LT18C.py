@@ -6,6 +6,8 @@ import logging, logging.config
 import time 
 from djitellopy import Tello; 
 from datetime import datetime
+import cv2
+import threading
 
 from Modules.Core.Vectors import Vector3 
 
@@ -55,6 +57,12 @@ class DroneController():
 
         logfile = f"{self.drone_name}.{now}.log"; 
         logname = self.drone_name; 
+
+
+        # Video Feed vars -- start as -1 until initiated w/ start_recording method
+        self.video_thread = -1
+        self.stop_video_event = -1
+
         
         # Thanks to Yogesh Yadav's example with Stream Handler and File Handler:
         #   https://stackoverflow.com/questions/7507825 (not the winning answer)
@@ -252,7 +260,104 @@ class DroneController():
         else:
             self.log.warning("ERROR: Drone battery less than 10%, aborting command and landing")
             self.land()
+
+    def cv2TextBoxWithBackground(img, text,
+        font=cv2.FONT_HERSHEY_PLAIN,
+        pos=(0, 0),
+        font_scale=1,
+        font_thickness=1,
+        text_color=(30, 255, 205),
+        text_color_bg=(48, 48, 48)):
+
+        x, y = pos
+        (text_w, text_h), _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+        text_pos = (x, y + text_h + font_scale)
+        box_pt1 = pos
+        box_pt2 = (x + text_w+2, y + text_h+2)
+        cv2.rectangle(img, box_pt1, box_pt2, text_color_bg, cv2.FILLED)
+        cv2.putText(img, text, text_pos, font, font_scale, text_color, font_thickness)
+        return img
+
+    def take_photo(self):
+        self.drone.streamon()
+        camera = self.drone.get_frame_read()
+        print("Taking picture in 3s ......", end="", flush=True)
+        time.sleep(1)
+        print("2s... ", end="", flush=True)
+        print("1s... ")
+        time.sleep(1)
+        print("*"*10)
+        print("* CLICK! *")
+        print("*"*10)
+
+        image = camera.frame
+        text = datetime.now().strftime("%Y-%m-%d %H:%m.%S")
+        self.cv2TextBoxWithBackground(image, text)
+        cv2.imwrite(f"{self.drone_name} Photograph", image)
+        time.sleep(0.001)
+
+        print("Press the <ESC> key to quit")
+        val = 1.0
+        while val >= 1:
+            val = cv2.getWindowProperty(f"{self.drone_name} Photograph", cv2.WND_PROP_VISIBLE)
+            key_code = cv2.waitKey(100)
+            if key_code & 0xFF == 27:
+                break
+        print("Destroying the picture window")
+        cv2.destroyAllWindows()
+        self.drone.streamoff()
+
+    def process_video_feed(self, stop_thread_event, display_video_live=False):
+
+        movie_name = f'{self.drone_name}_capture.avi'
+        movie_codec = cv2.VideoWriter_fourcc(*"mp4v")
+        movie_fps = 20
+        frame_wait = 1 / movie_fps
+        movie_size = (360, 240)
+
+        print("Thread started")
+        self.drone.streamon()
+        camera = self.drone.get_frame_read()
+        movie = cv2.VideoWriter(movie_name, movie_codec, movie_fps, movie_size, True)
+        time_prev = time.time()
+        if display_video_live:
+            cv2.namedWindow(f"{self.drone_name} Video Feed")
+        print("Video feed started")
+
+        while not stop_thread_event.isSet():
+
+            time_curr = time.time()
+            time_elapsed = time_curr - time_prev
+            if time_elapsed > frame_wait:
+                image = camera.frame
+                image = cv2.resize(image, movie_size)
+                if display_video_live:
+                    cv2.imshow(f"{self.drone_name} Video Feed", image)
+                cv2.waitKey(1)
+                movie.write(image)
+                time_prev = time_curr
+
+            if display_video_live:
+                cv2.waitKey(5)
+            else:
+                time.sleep(0.005)
+
+        print("Stopping video feed")
+        self.drone.streamoff()
+        movie.release()
+        print("Thread finished")
+
+    def begin_recording(self, show_feed = False):
+        self.stop_video_event = threading.Event()
+        self.video_thread = threading.Thread(target=self.process_video_feed, args=(self.stop_video_event, show_feed))
+        self.video_thread.setDaemon(True)
+        self.video_thread.start()
         
+    def end_recording(self):
+        self.stop_video_event.set()
+        self.video_thread.join(0.5)
+        print("Destroying all picture windows")
+        cv2.destroyAllWindows()
 
-
+    
 #------------------------- END OF HeadsUpTello CLASS ---------------------------

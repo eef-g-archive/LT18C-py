@@ -14,10 +14,10 @@ import logging
 
 # Custom modules for the drones
 from djitellopy import Tello
-from Core.LT18C import DroneController
-from Core.LT18C_Dummy import DummyController
-from Core.Vectors import Vector3
-from Core.motor_control import MotorController, pathing
+from Modules.Core.LT18C import DroneController
+from Modules.Core.LT18C_Dummy import DummyController
+from Modules.Core.Vectors import Vector3
+from Modules.Core.motor_control import MotorController, pathing
 
 #-------------------------------------------------------------------------------
 # Mission Programs

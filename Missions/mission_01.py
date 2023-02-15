@@ -6,8 +6,8 @@ import logging
 
 # Custom modules for the drones
 from djitellopy import Tello
-from Core.LT18C import DroneController
-from Core.motor_control import MotorController
+from Modules.Core.LT18C import DroneController
+from Modules.Core.motor_control import MotorController
 
 #-------------------------------------------------------------------------------
 # LED Matrix Display Pictures
