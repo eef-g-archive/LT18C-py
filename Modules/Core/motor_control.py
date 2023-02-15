@@ -278,6 +278,25 @@ class MotorController():
 
         return new_movement, next_movement; 
 
+    def move_curve_relative(self, end_point: Vector3, speed=50):
+        starting_position = self.position;
+        movement = self.calculate_tether_distance(end_point.magnitude, end_point.normalized);
+        movement, next_movement = self.handle_movement_limitation(movement);
+
+        for invoke in self.movement_invoke:
+            invoke(self.controller, movement);
+        
+        self.drone.curve_xyz_speed(self.position.x, self.position.y, self.position.z,
+                                   end_point.x, end_point.y, end_point.z, speed);
+        
+        print("Moved from ", starting_position, "to", self.position);
+
+        if next_movement is not None:
+            print("    The scope of the movement was greater than 500cm");
+            print("    Moving in smaller increment of", movement);
+            self.move_curve_relative(next_movement, speed)
+
+
 
     def move_relative(self, movement: Vector3, speed = 50):
         previous_position = self.position;  
@@ -295,12 +314,13 @@ class MotorController():
         drone_y = int(round(movement.x)); 
         drone_z = int(round(movement.y));  
 
+        #self.drone.set_speed(speed);
         if drone_x > 0: self.drone.move_forward(drone_x); 
         elif drone_x < 0: self.drone.move_back(abs(drone_x)); 
 
         if drone_y > 0: self.drone.move_right(drone_y); 
         elif drone_y < 0: self.drone.move_left(abs(drone_y));  
-        
+
         print('Moved from', previous_position, "to", self.position); 
 
         for callback in self.movement_callback:
@@ -311,20 +331,20 @@ class MotorController():
             print("     Moving in smaller increment of", movement); 
             self.move_relative(next_movement, speed);  
 
-    def move_relative_cm(self, x, y, z = 0):  
-        self.move_relative(Vector3(x, y, z)); 
+    def move_relative_cm(self, x, y, z = 0, speed=50):  
+        self.move_relative(Vector3(x, y, z), speed); 
 
-    def forward_cm(self, cm): 
-        self.move_relative_cm(0, 0, cm); 
+    def forward_cm(self, cm, speed=50): 
+        self.move_relative_cm(0, 0, cm, speed); 
     
-    def backward_cm(self, cm): 
-        self.move_relative_cm(0, 0, -cm); 
+    def backward_cm(self, cm, speed=50): 
+        self.move_relative_cm(0, 0, -cm, speed); 
 
-    def right_cm(self, cm): 
-        self.move_relative_cm(cm, 0, 0); 
+    def right_cm(self, cm, speed=50): 
+        self.move_relative_cm(cm, 0, 0, speed); 
 
-    def left_cm(self, cm): 
-        self.move_relative_cm(-cm, 0, 0);  
+    def left_cm(self, cm, speed=50): 
+        self.move_relative_cm(-cm, 0, 0, speed);  
 
 
     def return_home(self, path=pathing.direct):
