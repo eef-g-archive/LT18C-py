@@ -12,8 +12,10 @@ class Adjuster(object):
 
 
     def get_tof(self): 
+        response = ""; 
+        #if(response)
         response = self.controller.drone.send_command_with_return("EXT tof?"); 
-        print('\n\n\n', response, '\n\n\n');
+        print('\n\n\n', response, '\n\n\n'); 
         cm = int(response.split(' ')[1]) / 10; 
         return cm; 
 

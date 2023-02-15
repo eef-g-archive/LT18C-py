@@ -41,7 +41,8 @@ class MotorController():
         self.log.info(f"Drone rotated successfully. Current Rotation: {str(self.controller.transform.rotation)}"); 
 
     def __init__(self, controller: DroneController):
-        self.controller:DroneController = controller;    
+        self.controller:DroneController = controller;   
+        self.tether_distance = 500; 
 
         self.movement_invoke = [self.log_movement, self.battery_check]; 
         self.movement_callback = [self.log_post_movement]; 
@@ -138,6 +139,8 @@ class MotorController():
 
     def move_absolute(self, position: Vector3, path:pathing = pathing.direct):
         
+        position = self.calculate_tether_distance(position); 
+
         absolute_rotation = self.transform.look_at(position); 
         relative_rotation = (absolute_rotation - self.transform.rotation); 
         distance = self.transform.position.distance(position);  
@@ -145,8 +148,9 @@ class MotorController():
         match path: 
 
             case pathing.direct:  
-
+                
                 self.rotate_absolute(self.transform.look_at(position)); 
+
                 self.forward_cm(distance);   
                 return; 
 
@@ -226,9 +230,7 @@ class MotorController():
                 self.forward_cm(second_distance); 
 
                 return; 
-            case pathing.indirect: 
-                
-                dir = (self.transform.position - position).normalized; 
+            case pathing.indirect:  
 
                 first_distance = distance * math.cos(math.radians(relative_rotation.y)); 
 
@@ -255,7 +257,31 @@ class MotorController():
             case _:
                 raise Exception("Given pathing does not exist!"); 
 
+    def calculate_tether_distance(self, movement):
 
+        distance = movement.magnitude; 
+        direction = movement.normalized; 
+
+        full_dist_from_origin = (movement + self.transform.position).magnitude;  
+
+        movementThreshold = 21;  
+
+        print("full_dist_from_origin", full_dist_from_origin); 
+        if(full_dist_from_origin > self.tether_distance):
+            
+            if(self.transform.position.magnitude <= movementThreshold):
+                distance = self.tether_distance; 
+            
+            else:
+                #then this guy is going over the tether line;
+                rel_dist = self.transform.position.magnitude; #this is the C
+                d_angle = (self.transform.look_at(Vector3(0,0,0)) - self.transform.rotation).y; 
+                c_angle_rad = (math.sin(math.radians(d_angle)) * rel_dist)/self.tether_distance; 
+                v_angle = 180 - math.degrees(c_angle_rad) - d_angle;  
+                v_distance = (rel_dist * math.sin(math.radians(v_angle)))/math.sin(c_angle_rad); 
+                distance = v_distance; 
+
+        return direction * distance; 
 
     def move_relative(self, position: Vector3, speed = 50):
 
@@ -266,6 +292,8 @@ class MotorController():
             invoke(self.controller, position);  
 
         print("move command: ", position); 
+
+        position = self.calculate_tether_distance(position); 
         
         self.transform.position += self.transform.forward * position.z;     
         self.transform.position += self.transform.right * position.x;       
@@ -280,16 +308,30 @@ class MotorController():
         #    print("value less than 20 found, skipping"); 
         #    return; 
 
+        def clamp(value, min = 20, max = 500):
+            ret = value; 
+            if(value < min):
+                ret = min;  
+                return min; 
+            elif(value > max):
+                ret =  max; 
+                return max; 
+            return value; 
+            ret = value; 
+            if(ret > 50):
+                ret -= int(math.sqrt(ret)); 
+
+            return ret;  
 
         if drone_x > 0:
-            self.drone.move_forward(drone_x); 
+            self.drone.move_forward(clamp(drone_x)); 
         elif drone_x < 0:
-            self.drone.move_back(abs(drone_x)); 
+            self.drone.move_back(clamp(abs(drone_x))); 
 
         if drone_y > 0:
-            self.drone.move_right(drone_y); 
+            self.drone.move_right(clamp(drone_y)); 
         elif drone_y < 0:
-            self.drone.move_left(abs(drone_y));  
+            self.drone.move_left(clamp(abs(drone_y)));  
         
         print('moved to', self.transform.position); 
 
@@ -299,7 +341,7 @@ class MotorController():
     def move_relative_cm(self, x, y, z = 0):  
         self.move_relative(Vector3(x, y, z)); 
 
-    def forward_cm(self, cm):
+    def forward_cm(self, cm): 
         self.move_relative_cm(0, 0, cm); 
     
     def backward_cm(self, cm): 
@@ -312,9 +354,8 @@ class MotorController():
         self.move_relative_cm(-cm, 0, 0);  
 
 
-    def return_home(self, direct=False, path=pathing.direct):
-
-        self.log.debug(f"return_home function called. | direct = {direct}"); 
+    def return_home(self, path=pathing.direct):
+ 
 
         if (self.controller.get_battery() > self.controller.MIN_OPERATING_POWER):
             self.log.info(f"Drone position prior to returning home : [{self.transform.position}]")

@@ -93,8 +93,16 @@ class Vector3():
     def magnitude(self):
         return self.distance(Vector3(0, 0, 0)); 
 
+    @staticmethod
+    def Zero():
+        return Vector3(0, 0, 0); 
+
+
     @property
     def normalized(self):
+        if(self.x == 0 and self.y == 0 and self.z == 0):
+            return Vector3.Zero(); 
+
         return self.__div__(self.magnitude) 
 
     @property
