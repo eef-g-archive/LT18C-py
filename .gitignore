@@ -13,3 +13,5 @@
 *.vsix
 
 __pychache__/*
+
+Modules/Addons/yolov3.weights
