@@ -5,11 +5,10 @@
 #     MISSION   #
 #      LOGS     #
 #################
-# Mission Recording: https://flip.com/groups/14186500/topics/34494740/responses/409983467 
+# Mission Recording:
 # Findings: 
-# - Drone will be slightly off if starting on an elevated platform
-# - Distance the drone moves using the move() function built into the Tello class isn't always the exact same measurement.
-# - You can use the built in got_to_xyz method to automate the return home function, but we still included a manual one to know how it works
+
+
 
 # Standard python modules
 import time

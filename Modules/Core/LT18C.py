@@ -332,7 +332,6 @@ class DroneController():
             cv2.namedWindow(f"{self.drone_name} Video Feed")
         print("Video feed started")
 
-        frame_count = 0
         while not stop_thread_event.isSet():
 
             time_curr = time.time()
@@ -340,15 +339,13 @@ class DroneController():
             if time_elapsed > frame_wait:
                 image = camera.frame
                 image = cv2.resize(image, movie_size)
-                if(frame_count == movie_fps):
+                if(detect_humans == True):
                     image = self.yolo.analyze_frame(image)
-                    frame_count = 0
                 if display_video_live:
                     cv2.imshow(f"{self.drone_name} Video Feed", image)
                 cv2.waitKey(1)
                 movie.write(image)
                 time_prev = time_curr
-                frame_count += 1
 
             if display_video_live:
                 cv2.waitKey(5)

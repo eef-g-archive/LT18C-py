@@ -5,11 +5,9 @@
 #     MISSION   #
 #      LOGS     #
 #################
-# Mission Recording: https://flip.com/groups/14186500/topics/34494740/responses/409983467 
+# Mission Recording:
 # Findings: 
-# - Drone will be slightly off if starting on an elevated platform
-# - Distance the drone moves using the move() function built into the Tello class isn't always the exact same measurement.
-# - You can use the built in got_to_xyz method to automate the return home function, but we still included a manual one to know how it works
+
 
 # Standard python modules
 import time
@@ -33,19 +31,24 @@ import Modules.Core.movement_record as Recorder;
 def recording_mission():
     print("Beginning mission!")
     my_drone = Tello(); 
-    mission_params = [30, 180, "PT-Student", "Mission_14"]; 
+    mission_params = [30, 200, "PT-Student", "Mission_14"]; 
     drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
     Recorder.instantiate(drone); 
 
     drone.begin_recording(show_feed=True, detect_humans=True)
-    motor.takeoff()
-    motor.up_cm(80)
-    motor.forward_cm(30)
-    time.sleep(15)
-    motor.backward_cm(30)
+    while True:
+        userInput = input()
+        if(userInput == 'q'):
+            break
+    # motor.takeoff()
+    # time.sleep(1)
+    # motor.up_cm(60)
+    # motor.forward_cm(30)
+    # time.sleep(15)
+    # motor.backward_cm(30)
     
-    motor.land()
+    # motor.land()
     drone.end_recording()
     drone.disconnect()
 

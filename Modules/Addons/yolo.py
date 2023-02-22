@@ -145,7 +145,7 @@ class Yolo_Obj():
 
         img = image
         img, objs = self.process_image(img, dnn_object, confidence, threshold)
-        for label, score, (x, y, w, h) in objs:
-                print(f'  => {self.label_names[label]}: {100*score:.1f} at ({x},{y})->({x+w},{y+h})')
+        #for label, score, (x, y, w, h) in objs:
+        #        print(f'  => {self.label_names[label]}: {100*score:.1f} at ({x},{y})->({x+w},{y+h})')
 
         return img
