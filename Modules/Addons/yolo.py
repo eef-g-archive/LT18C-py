@@ -24,7 +24,7 @@ class Yolo_Obj():
 
 
         with open(labels_path, 'r') as f:
-            dnn_labels = [line.strip('\n') for line in f]
+            dnn_labels = [line.strip('\n') for line in f if line[0] != '#']
 
         dnn_object = cv2.dnn.readNetFromDarknet(config_path, weights_path)
         dnn_layers = dnn_object.getUnconnectedOutLayersNames()

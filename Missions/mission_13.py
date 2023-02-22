@@ -33,7 +33,7 @@ import Modules.Core.movement_record as Recorder;
 def recording_mission():
     print("Beginning mission!")
     my_drone = Tello(); 
-    mission_params = [30, 180, "PT-Student", "Mission_06"]; 
+    mission_params = [30, 180, "PT-Student", "Mission_13"]; 
     drone = DroneController(my_drone, logging.WARNING, floor=mission_params[0], ceiling=mission_params[1], drone_name=mission_params[2], mission_name=mission_params[3])
     motor = MotorController(drone); 
     Recorder.instantiate(drone); 

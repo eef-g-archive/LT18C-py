@@ -39,11 +39,13 @@ def recording_mission():
     Recorder.instantiate(drone); 
 
     drone.begin_recording(show_feed=True, detect_humans=True)
-    while True:
-        userInput = input("Press q to quit program: ")
-        if(userInput == 'q'):
-            break
+    motor.takeoff()
+    motor.up_cm(80)
+    motor.forward_cm(30)
+    time.sleep(15)
+    motor.backward_cm(30)
     
+    motor.land()
     drone.end_recording()
     drone.disconnect()
 
