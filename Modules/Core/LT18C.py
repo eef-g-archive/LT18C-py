@@ -10,6 +10,7 @@ import cv2
 import threading
 
 from Modules.Core.Vectors import Vector3 
+from Modules.Addons.yolo import Yolo_Obj
 
 
 #------------------------- BEGIN HeadsUpTello CLASS ----------------------------
@@ -45,6 +46,9 @@ class DroneController():
         self.drone.LOGGER.setLevel(debug_level)
         self.floor = floor
         self.ceiling = ceiling
+        # Initiate a Yolo_Obj in case we want to use image processing
+        self.yolo = Yolo_Obj();
+        self.connected = False
 
         self.transform = Transform();  
 
@@ -111,6 +115,7 @@ class DroneController():
 
 
         try:
+            self.drone.connect();
             self.drone.connect(); 
             self.connected = True; 
             self.log.info("Drone connected successfully"); 
@@ -131,7 +136,10 @@ class DroneController():
 
     def __del__(self):
         """ Destructor that gracefully closes the connection to the drone. """
-        if self.connected:
+        try:
+            if self.connected:
+                self.disconnect()
+        except Exception as excep:
             self.disconnect()
         return
 
@@ -307,9 +315,9 @@ class DroneController():
         cv2.destroyAllWindows()
         self.drone.streamoff()
 
-    def process_video_feed(self, stop_thread_event, display_video_live=False):
+    def process_video_feed(self, stop_thread_event, display_video_live=False, detect_humans=False):
 
-        movie_name = f'{self.drone_name}_capture.avi'
+        movie_name = f'{self.drone_name}_{self.mission_name}_capture.avi'
         movie_codec = cv2.VideoWriter_fourcc(*"mp4v")
         movie_fps = 20
         frame_wait = 1 / movie_fps
@@ -324,6 +332,7 @@ class DroneController():
             cv2.namedWindow(f"{self.drone_name} Video Feed")
         print("Video feed started")
 
+        frame_count = 0
         while not stop_thread_event.isSet():
 
             time_curr = time.time()
@@ -331,11 +340,15 @@ class DroneController():
             if time_elapsed > frame_wait:
                 image = camera.frame
                 image = cv2.resize(image, movie_size)
+                if(frame_count == movie_fps):
+                    image = self.yolo.analyze_frame(image)
+                    frame_count = 0
                 if display_video_live:
                     cv2.imshow(f"{self.drone_name} Video Feed", image)
                 cv2.waitKey(1)
                 movie.write(image)
                 time_prev = time_curr
+                frame_count += 1
 
             if display_video_live:
                 cv2.waitKey(5)
@@ -347,9 +360,9 @@ class DroneController():
         movie.release()
         print("Thread finished")
 
-    def begin_recording(self, show_feed = False):
+    def begin_recording(self, show_feed = False, detect_humans=False):
         self.stop_video_event = threading.Event()
-        self.video_thread = threading.Thread(target=self.process_video_feed, args=(self.stop_video_event, show_feed))
+        self.video_thread = threading.Thread(target=self.process_video_feed, args=(self.stop_video_event, show_feed, detect_humans))
         self.video_thread.setDaemon(True)
         self.video_thread.start()
         
