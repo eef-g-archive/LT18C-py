@@ -1,4 +1,3 @@
-
 #import os
 #import sys
 import time
@@ -36,7 +35,7 @@ class Pihawk:
             print "Vehicle now in GUIDED MODE"
 
         except APIException as e:
-            print(f"Error: {str(e)}")
+            print "Error: %s" % (e)
             raise RuntimeError('Cannot connect to drone')
 
     
